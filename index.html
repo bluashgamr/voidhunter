@@ -1,0 +1,2886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VOID HUNTER</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;overflow:hidden;font-family:'Share Tech Mono',monospace;}
+  #c{cursor:none;}
+  #c{display:block;}
+  #xhair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:10;display:none;}
+  /* Iron sights / scope overlay */
+  #adsOverlay{position:fixed;inset:0;pointer-events:none;z-index:9;display:none;}
+  #scopeOverlay{position:fixed;inset:0;pointer-events:none;z-index:11;display:none;background:#000;}
+  #scopeCanvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+  #ironCanvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+  #xhair .xl{position:absolute;background:rgba(255,255,255,0.82);}
+  #xhair .dot{position:absolute;background:#f55;border-radius:50%;}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5;display:none;}
+  #hbar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.75),transparent);padding:16px 28px 20px;display:flex;align-items:flex-end;justify-content:space-between;}
+  .hl{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,210,140,.75);margin-bottom:3px;}
+  .hv{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;line-height:1;color:#f5deb3;}
+  .hv.red{color:#f44;}
+  #htrack{width:170px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:5px;}
+  #hfill{height:100%;border-radius:2px;background:linear-gradient(90deg,#3c6,#6fa);transition:width .3s,background .3s;}
+  #wbadge{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);border:1px solid rgba(255,200,100,.35);padding:5px 18px;font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:5px;font-weight:600;color:rgba(255,200,100,.9);text-transform:uppercase;}
+  #swrap{position:absolute;top:14px;right:24px;text-align:right;}
+  #slbl{font-size:9px;letter-spacing:3px;color:rgba(255,210,140,.65);}
+  #sval{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:#f5deb3;line-height:1;}
+  #hitv{position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(180,10,10,.5)100%);pointer-events:none;opacity:0;z-index:4;transition:opacity .08s;}
+  #lowv{position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(140,0,0,.32)100%);pointer-events:none;opacity:0;z-index:3;}
+  #wann{position:fixed;top:36%;left:50%;transform:translate(-50%,-50%);font-family:'Rajdhani',sans-serif;font-size:clamp(20px,5vw,50px);font-weight:700;letter-spacing:.22em;color:#f5deb3;text-shadow:0 0 40px rgba(255,200,100,.45);opacity:0;z-index:10;pointer-events:none;transition:opacity .4s;text-transform:uppercase;}
+  /* Menu */
+  #menu{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  #menubg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(35,18,4,.9),transparent 65%);pointer-events:none;}
+  .mtitle{font-family:'Rajdhani',sans-serif;font-size:clamp(38px,8vw,88px);font-weight:700;letter-spacing:.15em;color:#f5deb3;text-shadow:0 0 50px rgba(255,190,90,.35);margin-bottom:4px;position:relative;}
+  .msub{font-size:10px;letter-spacing:4px;color:rgba(245,222,179,.65);margin-bottom:10px;position:relative;}
+  .msl{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.55);margin-bottom:6px;display:none;position:relative;}
+  .msv{font-family:'Rajdhani',sans-serif;font-size:50px;font-weight:700;color:#f5deb3;display:none;margin-bottom:24px;position:relative;}
+  #wpick{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:24px;}
+  #wpick .wplbl{font-size:9px;letter-spacing:5px;color:rgba(255,200,80,.75);text-transform:uppercase;margin-bottom:4px;}
+  #wpcards{display:flex;gap:8px;flex-direction:column;align-items:center;max-width:720px;width:100%;}
+  .wpcard{width:116px;padding:12px 10px 11px;background:rgba(10,12,16,.8);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:all .18s;pointer-events:all;position:relative;}
+  .wpcard:hover{background:rgba(255,200,80,.07);border-color:rgba(255,200,80,.3);}
+  .wpcard.selected{background:rgba(255,200,80,.13);border-color:rgba(255,200,80,.7);box-shadow:0 0 18px rgba(255,200,80,.15);}
+  .wpcard .wico{width:96px;height:32px;}
+  .wpcard .wcname{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:rgba(255,220,160,.95);letter-spacing:2px;text-transform:uppercase;}
+  .wpcard .wcmode{font-size:8px;letter-spacing:3px;color:rgba(255,200,80,.75);text-transform:uppercase;}
+  .wstat{width:92px;display:flex;justify-content:space-between;align-items:center;font-size:7px;letter-spacing:1px;color:rgba(200,200,200,.55);}
+  .wstat span{color:rgba(255,200,80,.8);width:22px;}
+  .wcbar{flex:1;height:2px;background:rgba(255,255,255,.12);border-radius:1px;margin-left:4px;}
+  .wcbf{height:100%;border-radius:1px;background:rgba(255,200,80,.6);}
+  .wpcard.selected .wcbf{background:rgba(255,200,80,.9);}
+  .wcheck{position:absolute;top:5px;right:6px;font-size:10px;color:rgba(255,200,80,.9);opacity:0;}
+  .wpcard.selected .wcheck{opacity:1;}
+  .wcdesc{font-size:7px;letter-spacing:.5px;color:rgba(220,210,190,.55);text-align:center;line-height:1.4;}
+  #playbtn{font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:6px;font-weight:700;color:#0a0a0a;background:linear-gradient(135deg,#c8a86c,#f5deb3);border:none;padding:14px 50px;cursor:pointer;text-transform:uppercase;position:relative;transition:all .2s;pointer-events:none;opacity:.35;}
+  #playbtn.ready{opacity:1;pointer-events:all;}
+  #playbtn.ready:hover{background:linear-gradient(135deg,#f5deb3,#fff);box-shadow:0 4px 36px rgba(200,168,108,.65);transform:translateY(-1px);}
+  .chint{font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.35);text-align:center;position:relative;margin-top:10px;}
+  .chint b{color:rgba(255,200,80,.7);font-weight:normal;}
+  /* Upgrade screen */
+  #upgrade{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:25;display:none;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;}
+  #upgrade .utitle{font-family:'Rajdhani',sans-serif;font-size:clamp(24px,5vw,54px);font-weight:700;letter-spacing:.15em;color:#f5deb3;text-shadow:0 0 40px rgba(255,190,90,.4);margin-bottom:4px;}
+  #upgrade .usub{font-size:9px;letter-spacing:5px;color:rgba(255,200,80,.7);margin-bottom:18px;text-transform:uppercase;}
+  #upgrade .uslotlbl{font-size:8px;letter-spacing:4px;color:rgba(255,200,80,.65);text-transform:uppercase;}
+  #upgrade .ucurrent{font-family:'Rajdhani',sans-serif;font-size:13px;color:rgba(255,220,160,.85);letter-spacing:2px;padding:4px 12px;border:1px solid rgba(255,200,80,.3);background:rgba(0,0,0,.4);}
+  #upgrade .urow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:760px;}
+  #upgrade .urowlbl{font-size:8px;letter-spacing:4px;color:rgba(255,200,80,.65);text-transform:uppercase;width:100%;text-align:center;margin:8px 0 4px;}
+  #upgradebtn{font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:5px;font-weight:700;color:#0a0a0a;background:linear-gradient(135deg,#c8a86c,#f5deb3);border:none;padding:12px 44px;cursor:pointer;text-transform:uppercase;transition:all .2s;margin-top:8px;}
+  #upgradebtn:hover{background:linear-gradient(135deg,#f5deb3,#fff);box-shadow:0 4px 28px rgba(200,168,108,.6);}
+  /* Attachment & Perk screens — two-column layout */
+  #attachscreen,#perkscreen{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:26;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px 0 12px;overflow-y:auto;}
+  .apscreen-inner{display:flex;gap:0;width:100%;max-width:1200px;height:calc(100vh - 120px);min-height:0;}
+  .apscreen-left{flex:1;overflow-y:auto;padding:0 12px 12px 12px;border-right:1px solid rgba(255,200,80,.1);}
+  .apscreen-right{width:340px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 20px;}
+  .apchoice{width:280px;padding:16px 14px;background:rgba(10,12,16,.85);border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .18s;position:relative;}
+  .apchoice:hover{background:rgba(255,200,80,.08);border-color:rgba(255,200,80,.4);}
+  .apchoice.selected{background:rgba(255,200,80,.15);border-color:rgba(255,200,80,.8);box-shadow:0 0 22px rgba(255,200,80,.18);}
+  .apchoice .apico{font-size:28px;margin-bottom:2px;}
+  .apchoice .apname{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:rgba(255,220,160,.9);text-transform:uppercase;}
+  .apchoice .apdesc{font-size:8px;letter-spacing:1px;color:rgba(220,210,190,.65);text-align:center;line-height:1.5;}
+  .aprow{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;}
+  .apskip{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.2);cursor:pointer;margin-top:4px;text-transform:uppercase;}
+  .apskip:hover{color:rgba(255,255,255,.45);}
+  /* Highscore modal */
+  #hsmodal{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;display:none;align-items:center;justify-content:center;}
+  #hsbox{background:rgba(8,10,14,.97);border:1px solid rgba(255,200,80,.3);padding:32px 40px;min-width:320px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  #hsbox .hstitle{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;letter-spacing:6px;color:#f5deb3;text-transform:uppercase;}
+  #hsbox .hsrow{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+  #hsbox .hsrank{font-size:11px;letter-spacing:2px;color:rgba(255,200,80,.7);width:28px;}
+  #hsbox .hsname{font-size:13px;letter-spacing:3px;color:#f5deb3;flex:1;text-align:center;}
+  #hsbox .hsscore{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#f5deb3;}
+  #hsbox .hsempty{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.3);}
+  #hsclosebtn{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:5px;color:rgba(255,255,255,.5);background:transparent;border:1px solid rgba(255,255,255,.2);padding:8px 28px;cursor:pointer;text-transform:uppercase;margin-top:6px;}
+  #hsclosebtn:hover{color:#f5deb3;border-color:rgba(255,200,80,.5);}
+  #hsbtn{font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:4px;color:rgba(255,200,80,.8);background:transparent;border:1px solid rgba(255,200,80,.3);padding:8px 22px;cursor:pointer;text-transform:uppercase;margin-top:4px;}
+  #hsbtn:hover{color:#f5deb3;border-color:rgba(255,200,80,.7);}
+  /* Username entry modal */
+  #usernamemodal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:55;display:none;align-items:center;justify-content:center;}
+  #usernamebox{background:rgba(8,10,14,.98);border:1px solid rgba(255,200,80,.4);padding:36px 44px;display:flex;flex-direction:column;align-items:center;gap:16px;min-width:320px;}
+  #usernamebox .untitle{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;letter-spacing:5px;color:#f5deb3;text-transform:uppercase;}
+  #usernamebox .unsub{font-size:9px;letter-spacing:3px;color:rgba(255,200,80,.7);text-align:center;}
+  #usernamebox .unscore{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:#f5deb3;}
+  #unInput{background:rgba(255,255,255,.06);border:1px solid rgba(255,200,80,.5);color:#f5deb3;font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;width:220px;text-align:center;padding:10px;letter-spacing:4px;outline:none;text-transform:uppercase;}
+  #unInput::placeholder{color:rgba(255,200,80,.3);}
+  #unsavebtn{font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:5px;font-weight:700;color:#0a0a0a;background:linear-gradient(135deg,#c8a86c,#f5deb3);border:none;padding:11px 36px;cursor:pointer;text-transform:uppercase;}
+  #unsavebtn:hover{background:linear-gradient(135deg,#f5deb3,#fff);}
+  #unskipbtn{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.35);background:transparent;border:none;padding:4px;cursor:pointer;text-transform:uppercase;}
+  #unskipbtn:hover{color:rgba(255,255,255,.6);}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="xhair"></div>
+<div id="adsOverlay"><canvas id="ironCanvas"></canvas></div>
+<div id="scopeOverlay"><canvas id="scopeCanvas"></canvas></div>
+<div id="hud">
+  <div id="wbadge">WAVE <span id="wv">1</span></div>
+  <div id="swrap"><div id="slbl">Score</div><div id="sval">0</div></div>
+  <div id="hbar">
+    <div><div class="hl">Health</div><div class="hv" id="hpv">100</div><div id="htrack"><div id="hfill"></div></div></div>
+    <div style="flex:1"></div>
+    <div style="text-align:right"><div class="hl" id="wnamelbl">—</div><div class="hv" id="amv">—</div></div>
+  </div>
+</div>
+<div id="hitv"></div><div id="lowv"></div>
+<div id="wann"></div>
+<div id="attachscreen">
+  <div class="utitle">ATTACHMENT</div>
+  <div class="usub">Equip one attachment for the next waves</div>
+  <div class="aprow" id="attachopts"></div>
+  <div class="apskip" id="attachskip">▶ Skip</div>
+</div>
+<div id="perkscreen">
+  <div class="utitle">PERK</div>
+  <div class="usub">Choose a permanent upgrade</div>
+  <div class="aprow" id="perkopts"></div>
+  <div class="apskip" id="perkskip">▶ Skip</div>
+</div>
+<div id="upgrade">
+  <div class="utitle">WAVE COMPLETE</div>
+  <div class="usub" id="usubtext">Choose your weapons for the next wave</div>
+  <div class="uslots">
+    <div class="uslot">
+      <div class="uslotlbl">▣ Primary</div>
+      <div class="ucurrent" id="ucurP">—</div>
+    </div>
+    <div class="uslot">
+      <div class="uslotlbl">◈ Sidearm</div>
+      <div class="ucurrent" id="ucurS">—</div>
+    </div>
+  </div>
+  <div id="ucards"></div>
+  <button id="upgradebtn">Continue to Wave <span id="unextwave">6</span></button>
+</div>
+<div id="menu">
+  <div id="menubg"></div>
+  <div class="mtitle" id="mtitle">VOID HUNTER</div>
+  <div class="msub" id="msub">3D Futuristic Game by <span style="color:rgba(255,200,80,.9)">BLUASHGAMR</span> using Claude</div>
+  <div class="msl" id="flbl">Final Score</div>
+  <div class="msv" id="fsv">0</div>
+  <div id="wpick">
+    <div style="font-size:8px;letter-spacing:3px;color:rgba(255,200,80,.55);text-align:center;margin-bottom:8px;text-transform:uppercase;">Press <b style="color:rgba(255,200,80,.9);">F11</b> for fullscreen</div>
+    <div class="wplbl">Choose primary + sidearm to deploy</div>
+    <div id="wpcards"></div>
+  </div>
+  <button id="playbtn">Deploy</button>
+  <button id="hsbtn" style="margin-top:10px;">High Scores</button>
+  <div class="chint" style="margin-top:10px">
+    WASD Move · Mouse Aim · <b>LClick</b> Fire · <b>RClick</b> Scope · <b>R</b> Reload · <b>Q</b> Swap · <b>Shift</b> Sprint · <b>6</b> Grenade · <b>Space</b> Airstrike
+  </div>
+</div>
+
+<!-- Highscore Modal -->
+<div id="hsmodal">
+  <div id="hsbox">
+    <div class="hstitle">High Scores</div>
+    <div id="hslist"></div>
+    <button id="hsclosebtn">Close</button>
+  </div>
+</div>
+
+<!-- Username Entry Modal -->
+<div id="usernamemodal">
+  <div id="usernamebox">
+    <div class="untitle">New High Score!</div>
+    <div class="unsub">You made the leaderboard</div>
+    <div class="unscore" id="unScoreDisplay">0</div>
+    <input id="unInput" type="text" maxlength="12" placeholder="ENTER NAME" autocomplete="off" spellcheck="false">
+    <button id="unsavebtn">Save Score</button>
+    <button id="unskipbtn">Skip</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── RENDERER ─────────────────────────────────────────────
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+renderer.outputEncoding=THREE.sRGBEncoding;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x06080c);
+scene.fog=new THREE.FogExp2(0x07090d,0.017);
+
+const camera=new THREE.PerspectiveCamera(72,window.innerWidth/window.innerHeight,0.1,120);
+camera.position.set(0,1.75,0);
+scene.add(camera);
+
+// ─── TEXTURES ─────────────────────────────────────────────
+function mkTex(sz,fn){const c=document.createElement('canvas');c.width=c.height=sz;fn(c.getContext('2d'),sz);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
+const TEX={
+  // Detailed concrete floor: large tiles, grout lines, grime, cracks
+  floor:mkTex(512,(g,s)=>{
+    g.fillStyle='#1d1b16';g.fillRect(0,0,s,s);
+    // base noise grain
+    for(let i=0;i<4000;i++){const v=(Math.random()-.5)*18;const x=Math.random()*s,y=Math.random()*s;g.fillStyle=`rgba(${140+v},${128+v},${108+v},.05)`;g.fillRect(x,y,2,2);}
+    // large tile grid
+    g.strokeStyle='rgba(0,0,0,.55)';g.lineWidth=2;
+    for(let v=0;v<=s;v+=128){g.beginPath();g.moveTo(0,v);g.lineTo(s,v);g.stroke();}
+    for(let h=0;h<=s;h+=128){g.beginPath();g.moveTo(h,0);g.lineTo(h,s);g.stroke();}
+    // grout inset lines
+    g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=.8;
+    for(let v=0;v<=s;v+=128){g.beginPath();g.moveTo(0,v+3);g.lineTo(s,v+3);g.stroke();}
+    for(let h=0;h<=s;h+=128){g.beginPath();g.moveTo(h+3,0);g.lineTo(h+3,s);g.stroke();}
+    // stains
+    for(let i=0;i<6;i++){const x0=Math.random()*s,y0=Math.random()*s;const gx=g.createRadialGradient(x0,y0,0,x0,y0,60);gx.addColorStop(0,'rgba(0,0,0,.12)');gx.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gx;g.fillRect(0,0,s,s);}
+    // cracks
+    for(let i=0;i<5;i++){g.beginPath();g.strokeStyle=`rgba(0,0,0,${.15+Math.random()*.1})`;g.lineWidth=.7;let cx=Math.random()*s,cy=Math.random()*s;g.moveTo(cx,cy);for(let j=0;j<7;j++){cx+=(Math.random()-.5)*50;cy+=(Math.random()-.5)*50;g.lineTo(cx,cy);}g.stroke();}
+  }),
+  // Brutalist wall: concrete panels with weathering
+  wall:mkTex(512,(g,s)=>{
+    g.fillStyle='#161819';g.fillRect(0,0,s,s);
+    for(let i=0;i<3000;i++){const v=(Math.random()-.5)*14;g.fillStyle=`rgba(${50+v},${52+v},${56+v},.09)`;g.fillRect(Math.random()*s,Math.random()*s,2,2);}
+    // panel lines
+    g.strokeStyle='rgba(0,0,0,.4)';g.lineWidth=1.5;
+    for(let y=0;y<=s;y+=128){g.beginPath();g.moveTo(0,y);g.lineTo(s,y);g.stroke();}
+    for(let x=0;x<=s;x+=64){g.beginPath();g.moveTo(x,0);g.lineTo(x,s);g.stroke();}
+    // highlight seams
+    g.strokeStyle='rgba(255,255,255,.025)';g.lineWidth=1;
+    for(let y=0;y<=s;y+=128){g.beginPath();g.moveTo(0,y+2);g.lineTo(s,y+2);g.stroke();}
+    // water streaks
+    for(let i=0;i<8;i++){g.beginPath();g.strokeStyle=`rgba(0,0,0,${.06+Math.random()*.06})`;g.lineWidth=1+Math.random();const sx=Math.random()*s;g.moveTo(sx,0);g.lineTo(sx+(Math.random()-.5)*20,s);g.stroke();}
+  }),
+  // Metal cover blocks: brushed steel look
+  metal:mkTex(256,(g,s)=>{
+    g.fillStyle='#1e2535';g.fillRect(0,0,s,s);
+    // horizontal brushed lines
+    for(let i=0;i<600;i++){const y=Math.random()*s;const v=(Math.random()-.5)*30;g.fillStyle=`rgba(${90+v},${104+v},${122+v},.07)`;g.fillRect(0,y,s,1);}
+    // panel grid
+    g.strokeStyle='rgba(0,0,0,.3)';g.lineWidth=1;
+    for(let y=0;y<=s;y+=64){g.beginPath();g.moveTo(0,y);g.lineTo(s,y);g.stroke();}
+    for(let x=0;x<=s;x+=64){g.beginPath();g.moveTo(x,0);g.lineTo(x,s);g.stroke();}
+    // rivets
+    for(let y=28;y<s;y+=64)for(let x=28;x<s;x+=64){g.beginPath();g.arc(x,y,2.8,0,Math.PI*2);g.fillStyle='rgba(255,255,255,.07)';g.fill();g.beginPath();g.arc(x+.8,y+.8,2.8,0,Math.PI*2);g.fillStyle='rgba(0,0,0,.18)';g.fill();}
+    // scratches
+    for(let i=0;i<20;i++){g.beginPath();g.strokeStyle=`rgba(255,255,255,${.03+Math.random()*.04})`;g.lineWidth=.5;const sx=Math.random()*s,sy=Math.random()*s;g.moveTo(sx,sy);g.lineTo(sx+(Math.random()-.5)*60,sy+(Math.random()-.5)*20);g.stroke();}
+  }),
+  // Roughness map for floor (used in PBR)
+  floorRough:mkTex(256,(g,s)=>{
+    g.fillStyle='#888';g.fillRect(0,0,s,s);
+    for(let i=0;i<2000;i++){const v=Math.random()*60-30;g.fillStyle=`rgb(${128+v},${128+v},${128+v})`;g.fillRect(Math.random()*s,Math.random()*s,3,3);}
+  }),
+};
+TEX.floor.repeat.set(18,18);TEX.wall.repeat.set(10,2);TEX.metal.repeat.set(4,4);TEX.floorRough.repeat.set(18,18);
+
+// ─── MATERIALS (PBR) ──────────────────────────────────────
+const M={
+  floor:new THREE.MeshStandardMaterial({map:TEX.floor,roughnessMap:TEX.floorRough,roughness:0.88,metalness:0.04,envMapIntensity:0.4}),
+  wall:new THREE.MeshStandardMaterial({map:TEX.wall,roughness:0.92,metalness:0.0,color:0xbbbbbb}),
+  metal:new THREE.MeshStandardMaterial({map:TEX.metal,roughness:0.45,metalness:0.72,color:0x8899aa}),
+  trim:new THREE.MeshStandardMaterial({color:0x2a3848,roughness:0.6,metalness:0.55}),
+  ceil:new THREE.MeshStandardMaterial({color:0x080a0e,roughness:0.95,metalness:0.0}),
+  lamp:new THREE.MeshBasicMaterial({color:0xffbb66}),
+};
+
+// ─── LIGHTING ─────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x1a1a2e,8));
+scene.add(new THREE.HemisphereLight(0x1e2238,0x0a0a0a,3));
+const sun=new THREE.DirectionalLight(0x9aaabb,2.2);
+sun.position.set(8,18,6);sun.castShadow=true;
+sun.shadow.camera.near=1;sun.shadow.camera.far=90;
+sun.shadow.camera.left=sun.shadow.camera.bottom=-50;
+sun.shadow.camera.right=sun.shadow.camera.top=50;
+sun.shadow.mapSize.set(1024,1024);sun.shadow.bias=-0.001;
+scene.add(sun);
+const lc=[0xff6633,0xff7744,0xff8844,0xff9955,0xffaa66];
+[[-20,6.5,-20],[20,6.5,-20],[20,6.5,20],[-20,6.5,20],[0,6.5,0]].forEach(([x,y,z],i)=>{
+  const pl=new THREE.PointLight(lc[i%5],22,32,2);pl.position.set(x,y,z);scene.add(pl);
+  const lm=new THREE.Mesh(new THREE.SphereGeometry(.22,6,6),new THREE.MeshStandardMaterial({color:lc[i%5],emissive:lc[i%5],emissiveIntensity:2.5,roughness:1,metalness:0}));lm.position.set(x,y,z);scene.add(lm);
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(2.6,3.2,8,1,true),new THREE.MeshBasicMaterial({color:lc[i%5],transparent:true,opacity:.04,side:THREE.BackSide,depthWrite:false}));
+  cone.position.set(x,y-1.6,z);scene.add(cone);
+  const decal=new THREE.Mesh(new THREE.PlaneGeometry(4,4),new THREE.MeshBasicMaterial({color:lc[i%5],transparent:true,opacity:.06,depthWrite:false}));
+  decal.rotation.x=-Math.PI/2;decal.position.set(x,.02,z);scene.add(decal);
+});
+
+// ─── ARENA ────────────────────────────────────────────────
+const ARENA=40;
+const floorM=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),M.floor);floorM.rotation.x=-Math.PI/2;floorM.receiveShadow=true;scene.add(floorM);
+const ceilM=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),M.ceil);ceilM.rotation.x=Math.PI/2;ceilM.position.y=9.8;scene.add(ceilM);
+const bmMat=new THREE.MeshLambertMaterial({color:0x1a1e26});
+for(let x=-ARENA;x<=ARENA;x+=14){const b=new THREE.Mesh(new THREE.BoxGeometry(.25,.28,ARENA*2),bmMat);b.position.set(x,9.65,0);scene.add(b);}
+for(let z=-ARENA;z<=ARENA;z+=14){const b=new THREE.Mesh(new THREE.BoxGeometry(ARENA*2,.28,.25),bmMat);b.position.set(0,9.65,z);scene.add(b);}
+[{p:[0,5,-ARENA],ry:0},{p:[0,5,ARENA],ry:Math.PI},{p:[-ARENA,5,0],ry:Math.PI/2},{p:[ARENA,5,0],ry:-Math.PI/2}].forEach(w=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,10),M.wall);m.position.set(...w.p);m.rotation.y=w.ry;m.receiveShadow=true;scene.add(m);
+  const tb=new THREE.Mesh(new THREE.BoxGeometry(ARENA*2,.15,.07),M.trim);tb.position.set(w.p[0],.075,w.p[2]);tb.rotation.y=w.ry;tb.position.z+=Math.sin(w.ry)*.04;scene.add(tb);
+});
+[-1,1].forEach(sx=>[-1,1].forEach(sz=>{const p=new THREE.Mesh(new THREE.BoxGeometry(1.1,9.8,1.1),M.metal);p.position.set(sx*(ARENA-2),4.9,sz*(ARENA-2));p.castShadow=p.receiveShadow=true;scene.add(p);}));
+[{x:-8,z:-8,w:2.2,d:1.4,h:2.1},{x:8,z:-8,w:1.4,d:2.2,h:2.5},{x:-8,z:8,w:1.8,d:1.8,h:1.8},{x:8,z:8,w:2,d:1.2,h:2.2},{x:0,z:-16,w:3,d:1.2,h:2},{x:0,z:16,w:3,d:1.2,h:2},{x:-16,z:0,w:1.2,d:3,h:2},{x:16,z:0,w:1.2,d:3,h:2},{x:-12,z:-20,w:1.5,d:1.5,h:3},{x:12,z:-20,w:1.5,d:1.5,h:3},{x:-12,z:20,w:1.5,d:1.5,h:3},{x:12,z:20,w:1.5,d:1.5,h:3},{x:0,z:0,w:2,d:2,h:1.4}].forEach(({x,z,w,d,h})=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M.metal);m.position.set(x,h/2,z);m.castShadow=m.receiveShadow=true;scene.add(m);
+  [h+.025,.025].forEach(py=>{const tr=new THREE.Mesh(new THREE.BoxGeometry(w+.04,.05,d+.04),M.trim);tr.position.set(x,py,z);scene.add(tr);});
+});
+
+// ─── GUN MATERIAL HELPERS ─────────────────────────────────
+function gMat(col,r=.35,me=.85){return new THREE.MeshStandardMaterial({color:col,roughness:r,metalness:me});}
+function bx(w,h,d,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.castShadow=true;return m;}
+function cy(r,h,mat,seg=10){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),mat);m.castShadow=true;return m;}
+function pl(m,x,y,z,rx=0,ry=0,rz=0){m.position.set(x,y,z);m.rotation.x+=rx;m.rotation.y+=ry;m.rotation.z+=rz;return m;}
+function add(g,m,x,y,z,rx=0,ry=0,rz=0){pl(m,x,y,z,rx,ry,rz);g.add(m);}
+
+// ─────────────────────────────────────────────────────────
+//  WEAPON DEFINITIONS + REALISTIC 3D MODEL BUILDERS
+// ─────────────────────────────────────────────────────────
+
+// ── M16A4 ── flat-top AR with triangular handguard, A2 flash hider, carry handle removed, 30-round STANAG mag
+function buildM16(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.4,.82), poly=gMat(0x1e2022,.6,.2), mfg=gMat(0x181a1c,.45,.85);
+  // Lower receiver
+  const lower=bx(.072,.075,.28,blk);pl(lower,0,-.01,-.04);g.add(lower);
+  // Upper receiver (flat-top)
+  const upper=bx(.072,.065,.3,blk);pl(upper,0,.052,-.05);g.add(upper);
+  // Picatinny rail on top
+  for(let i=0;i<6;i++){const r=bx(.068,.01,.032,mfg);pl(r,0,.088,-.22+i*.058);g.add(r);}
+  // Carry-handle-less flat top
+  const flatTop=bx(.068,.008,.3,mfg);pl(flatTop,0,.09,-.05);g.add(flatTop);
+  // M4-style 6-position collapsible stock
+  const stockTube=cy(.022,.2,blk);pl(stockTube,0,.01,.15,Math.PI/2);g.add(stockTube);
+  const stockBody=bx(.065,.055,.13,poly);pl(stockBody,0,.005,.2);g.add(stockBody);
+  const stockPad=bx(.062,.065,.018,gMat(0x111111,.9,.05));pl(stockPad,0,.005,.275);g.add(stockPad);
+  // Pistol grip (A2 grip shape)
+  const grip=bx(.042,.13,.06,poly);pl(grip,0,-.075,.04,.28);g.add(grip);
+  const gripBot=bx(.04,.03,.04,poly);pl(gripBot,0,-.14,.05,.15);g.add(gripBot);
+  // Trigger guard
+  const tg=bx(.068,.008,.052,blk);pl(tg,0,-.018,.04);g.add(tg);
+  // STANAG 30-rd magazine (curved)
+  const magBody=bx(.046,.11,.05,blk);pl(magBody,0,-.098,-.04);g.add(magBody);
+  const magBot=bx(.042,.018,.044,blk);pl(magBot,0,-.158,-.036,.04);g.add(magBot);
+  // Delta ring / barrel nut
+  const deltaRing=cy(.038,.018,mfg);pl(deltaRing,0,.035,-.16,Math.PI/2);g.add(deltaRing);
+  // Triangular handguard (two halves)
+  const hg=bx(.055,.048,.22,poly);pl(hg,0,.03,-.31);g.add(hg);
+  const hgBot=bx(.05,.022,.22,poly);pl(hgBot,0,.006,-.31);g.add(hgBot);
+  // Gas tube
+  const gasTube=cy(.007,.22,gMat(0x222426,.3,.9));pl(gasTube,0,.064,-.31,Math.PI/2);g.add(gasTube);
+  // Barrel (government profile — thicker near receiver)
+  const brlBase=cy(.022,.12,blk);pl(brlBase,0,.035,-.49,Math.PI/2);g.add(brlBase);
+  const brlMid=cy(.018,.18,blk);pl(brlMid,0,.035,-.65,Math.PI/2);g.add(brlMid);
+  const brlEnd=cy(.014,.12,blk);pl(brlEnd,0,.035,-.79,Math.PI/2);g.add(brlEnd);
+  // A2 flash hider (birdcage)
+  const fh=cy(.02,.045,mfg);pl(fh,0,.035,-.865,Math.PI/2);g.add(fh);
+  const fhSlot1=bx(.005,.045,.045,gMat(0x0a0a0a));pl(fhSlot1,.022,.035,-.865);g.add(fhSlot1);
+  const fhSlot2=bx(.005,.045,.045,gMat(0x0a0a0a));pl(fhSlot2,-.022,.035,-.865);g.add(fhSlot2);
+  // Front sight post (A-frame)
+  const fsBase=bx(.038,.05,.032,blk);pl(fsBase,0,.058,-.76);g.add(fsBase);
+  const fsPost=cy(.003,.04,gMat(0x333333));pl(fsPost,0,.085,-.76);g.add(fsPost);
+  // Charging handle
+  const ch=bx(.018,.01,.04,blk);pl(ch,0,.082,-.12);g.add(ch);
+  const chPull=bx(.03,.008,.014,blk);pl(chPull,0,.082,-.1);g.add(chPull);
+  // Bolt catch / mag release details
+  const mc=bx(.008,.018,.016,mfg);pl(mc,.037,.005,-.03);g.add(mc);
+  // Front grip / vertical foregrip optional — skip for stock M16
+  return g;
+}
+
+// ── MP5 ── roller-delayed blowback, polymer lower, curved 30-rd mag, Navy trigger group, fixed stock
+function buildMP5(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.4,.82), poly=gMat(0x1e2022,.6,.2), mfg=gMat(0x202224,.4,.85);
+  // Receiver (tubular MP5 profile)
+  const recv=bx(.068,.075,.26,blk);pl(recv,0,-.005,.0);g.add(recv);
+  // Cocking tube / upper
+  const tube=cy(.035,.26,blk);pl(tube,0,.035,0,Math.PI/2);g.add(tube);
+  // Rear sight drum
+  const sightDrum=cy(.016,.012,mfg);pl(sightDrum,0,.072,-.07);g.add(sightDrum);
+  // Fixed stock (MP5A3 solid)
+  const stockUpper=bx(.055,.028,.19,poly);pl(stockUpper,0,.025,.17);g.add(stockUpper);
+  const stockLower=bx(.05,.018,.19,poly);pl(stockLower,0,-.01,.17);g.add(stockLower);
+  const stockBridge=bx(.052,.042,.018,poly);pl(stockBridge,0,.008,.08);g.add(stockBridge);
+  const stockPad=bx(.05,.055,.012,gMat(0x111,.9,.05));pl(stockPad,0,.008,.265);g.add(stockPad);
+  // Pistol grip (MP5 long grip)
+  const grip=bx(.04,.115,.05,poly);pl(grip,0,-.074,.04,.22);g.add(grip);
+  const gripBot=bx(.038,.022,.038,poly);pl(gripBot,0,-.13,.05,.1);g.add(gripBot);
+  // Trigger group housing
+  const tgh=bx(.065,.038,.07,poly);pl(tgh,0,-.03,.04);g.add(tgh);
+  // Curved 30-rd magazine
+  const mag=bx(.042,.092,.044,blk);pl(mag,0,-.107,-.025);g.add(mag);
+  const magCurve=bx(.04,.03,.04,blk);pl(magCurve,0,-.152,-.034,.12);g.add(magCurve);
+  const magFloor=bx(.04,.01,.038,gMat(0x333,.5,.3));pl(magFloor,0,-.168,-.03);g.add(magFloor);
+  // Handguard (MP5 tri-rail look)
+  const hg=bx(.064,.052,.14,poly);pl(hg,0,.018,-.18);g.add(hg);
+  const hgBot=bx(.06,.02,.14,poly);pl(hgBot,0,-.008,-.18);g.add(hgBot);
+  // Barrel (shorter than M16, threaded end)
+  const brl=cy(.015,.2,blk);pl(brl,0,.035,-.3,Math.PI/2);g.add(brl);
+  // Muzzle / tri-lug adapter
+  const muzzle=cy(.019,.028,mfg);pl(muzzle,0,.035,-.41,Math.PI/2);g.add(muzzle);
+  // Front sight (hooded post)
+  const fsHood=bx(.032,.022,.008,blk);pl(fsHood,0,.062,-.38);g.add(fsHood);
+  // Cocking handle (MP5 side-mounted T-bar)
+  const cockSlot=bx(.01,.012,.12,gMat(0x0a0c0e));pl(cockSlot,.038,.035,-.08);g.add(cockSlot);
+  const cockHandle=bx(.025,.016,.02,blk);pl(cockHandle,.04,.035,-.03);g.add(cockHandle);
+  return g;
+}
+
+// ── M249 SAW ── belt-fed LMG, bipod, long heavy barrel, box mag
+function buildM249(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1c1e20,.4,.82), poly=gMat(0x222426,.6,.15), mfg=gMat(0x1a1c1e,.38,.88);
+  // Receiver body (longer, bulkier)
+  const recv=bx(.082,.09,.36,blk);pl(recv,0,-.005,-.06);g.add(recv);
+  // Top cover (feed tray)
+  const topCover=bx(.08,.022,.36,mfg);pl(topCover,0,.057,-.06);g.add(topCover);
+  // Carry handle
+  const carryBase=bx(.018,.045,.06,mfg);pl(carryBase,0,.088,-.02);g.add(carryBase);
+  const carryBar=cy(.007,.14,mfg);pl(carryBar,0,.108,-.02,0,Math.PI/2);g.add(carryBar);
+  // Fixed A-frame stock
+  const stockBody=bx(.07,.065,.15,poly);pl(stockBody,0,-.005,.2);g.add(stockBody);
+  const stockPad=bx(.066,.075,.016,gMat(0x111,.9,.05));pl(stockPad,0,-.005,.28);g.add(stockPad);
+  // Pistol grip
+  const grip=bx(.046,.12,.058,poly);pl(grip,0,-.08,.05,.25);g.add(grip);
+  // Trigger guard
+  const tg=bx(.08,.01,.06,blk);pl(tg,0,-.015,.05);g.add(tg);
+  // Heavy polymer forestock
+  const forestock=bx(.07,.06,.2,poly);pl(forestock,0,.015,-.28);g.add(forestock);
+  // Ammo box (200-rd plastic box on left side)
+  const boxMag=bx(.075,.095,.16,gMat(0x2a2e22,.7,.1));pl(boxMag,-.065,-.04,-.08);g.add(boxMag);
+  const boxLatch=bx(.01,.015,.04,mfg);pl(boxLatch,-.104,0,-.06);g.add(boxLatch);
+  // Alternatively a 200-rd drum or box attached below
+  // Heavy barrel (longer, QCB profile)
+  const brlBase=cy(.024,.15,blk);pl(brlBase,0,.042,-.46,Math.PI/2);g.add(brlBase);
+  const brlMid=cy(.019,.22,blk);pl(brlMid,0,.042,-.63,Math.PI/2);g.add(brlMid);
+  const brlEnd=cy(.015,.1,blk);pl(brlEnd,0,.042,-.79,Math.PI/2);g.add(brlEnd);
+  // Flash hider (3-prong)
+  const fh=cy(.022,.04,mfg);pl(fh,0,.042,-.845,Math.PI/2);g.add(fh);
+  const prong1=bx(.004,.04,.04,mfg);pl(prong1,.022,.042,-.845);g.add(prong1);
+  const prong2=bx(.004,.04,.04,mfg);pl(prong2,-.022,.042,-.845);g.add(prong2);
+  // Bipod legs
+  const bpBase=bx(.02,.014,.04,mfg);pl(bpBase,0,.035,-.68);g.add(bpBase);
+  const bpLegL=bx(.008,.001,.1,mfg);pl(bpLegL,.025,.02,-.68,-.8);g.add(bpLegL);
+  const bpLegR=bx(.008,.001,.1,mfg);pl(bpLegR,-.025,.02,-.68,-.8);g.add(bpLegR);
+  // Gas tube
+  const gasTube=cy(.008,.28,mfg);pl(gasTube,0,.075,-.3,Math.PI/2);g.add(gasTube);
+  // Front sight post
+  const fs=bx(.036,.04,.03,blk);pl(fs,0,.08,-.75);g.add(fs);
+  // Charging handle (side)
+  const chSlot=bx(.008,.016,.1,gMat(0x0a0c0e));pl(chSlot,.045,.025,-.15);g.add(chSlot);
+  const chKnob=cy(.012,.016,mfg);pl(chKnob,.045,.025,-.1);g.add(chKnob);
+  return g;
+}
+
+// ── W1200 / Winchester 1200 ── pump-action shotgun, walnut stock, ribbed slide
+function buildW1200(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1e2020,.38,.88), walnut=gMat(0x3d1f0a,.85,.04), poly=gMat(0x1a1c1e,.6,.1);
+  // Walnut stock (straight shotgun stock shape)
+  const stockBody=bx(.06,.072,.2,walnut);pl(stockBody,0,-.002,.19);g.add(stockBody);
+  const stockComb=bx(.058,.048,.12,walnut);pl(stockComb,0,.018,.22);g.add(stockComb);
+  const stockPad=bx(.056,.078,.016,gMat(0x0d0d0d,.95,.02));pl(stockPad,0,.0,.305);g.add(stockPad);
+  // Receiver (steel)
+  const recv=bx(.072,.068,.22,blk);pl(recv,0,-.006,-.02);g.add(recv);
+  // Ejection port
+  const port=bx(.03,.022,.06,gMat(0x0d0e0e,.5,.9));pl(port,.038,.0,.0);g.add(port);
+  // Trigger guard (steel loop)
+  const tg=bx(.065,.01,.058,blk);pl(tg,0,-.018,.02);g.add(tg);
+  // Pistol grip / wrist of stock
+  const wrist=bx(.055,.06,.07,walnut);pl(wrist,0,-.025,.1,.12);g.add(wrist);
+  // Pump forend (slide — ribbed walnut)
+  const forend=bx(.068,.052,.2,walnut);pl(forend,0,.01,-.27);g.add(forend);
+  // Slide ribs
+  for(let i=0;i<5;i++){const r=bx(.07,.006,.006,gMat(0x4a2810,.85,.04));pl(r,0,.038,-.19+i*.03);g.add(r);}
+  // Magazine tube (under barrel)
+  const magTube=cy(.018,.44,blk);pl(magTube,0,.008,-.35,Math.PI/2);g.add(magTube);
+  const magCap=cy(.02,.018,blk);pl(magCap,0,.008,-.575,Math.PI/2);g.add(magCap);
+  // Barrel (smooth bore, vented rib on top)
+  const brl=cy(.024,.46,blk);pl(brl,0,.035,-.36,Math.PI/2);g.add(brl);
+  // Vented rib
+  const rib=bx(.012,.006,.46,blk);pl(rib,0,.062,-.36);g.add(rib);
+  for(let i=0;i<8;i++){const v=bx(.004,.012,.006,blk);pl(v,0,.056,-.14+i*.05);g.add(v);}
+  // Bead sight
+  const bead=new THREE.Mesh(new THREE.SphereGeometry(.006,6,6),gMat(0xdddddd,.2,.95));bead.position.set(0,.068,-.59);g.add(bead);
+  // Barrel band / mag cap ring
+  const ring=cy(.026,.018,blk);pl(ring,0,.022,-.57,Math.PI/2);g.add(ring);
+  return g;
+}
+
+// ── Remington 700 ── bolt-action, 26" barrel, McMillan stock, Leupold scope
+function buildR700(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.38,.88), stock=gMat(0x2a2218,.75,.04), mfg=gMat(0x1c1e20,.35,.9);
+  // McMillan-style synthetic stock (flat-bottomed, full-length)
+  const stockBody=bx(.068,.065,.36,stock);pl(stockBody,0,-.012,.05);g.add(stockBody);
+  const stockFore=bx(.062,.04,.16,stock);pl(stockFore,0,-.02,-.22);g.add(stockFore);
+  const stockComb=bx(.065,.05,.14,stock);pl(stockComb,0,.018,.2);g.add(stockComb);
+  const stockPad=bx(.062,.075,.014,gMat(0x111,.9,.03));pl(stockPad,0,.006,.29);g.add(stockPad);
+  const pistolWrist=bx(.052,.06,.08,stock);pl(pistolWrist,0,-.038,.1,.2);g.add(pistolWrist);
+  // Action / receiver (long action)
+  const action=bx(.075,.062,.24,blk);pl(action,0,.04,.0);g.add(action);
+  // Integral scope bases (two-piece)
+  const base1=bx(.072,.01,.06,mfg);pl(base1,0,.073,.02);g.add(base1);
+  const base2=bx(.072,.01,.06,mfg);pl(base2,0,.073,-.08);g.add(base2);
+  // Leupold VX-3i scope (detailed)
+  const scopeTube=cy(.028,.26,gMat(0x1a1a1a,.3,.85));pl(scopeTube,0,.106,-.04,Math.PI/2);g.add(scopeTube);
+  const scopeObjBell=cy(.042,.06,gMat(0x1a1a1a,.3,.85));pl(scopeObjBell,0,.106,-.2,Math.PI/2);g.add(scopeObjBell);
+  const scopeObj=cy(.038,.018,gMat(0x001122,.05,.1));pl(scopeObj,0,.106,-.234,Math.PI/2);g.add(scopeObj);// objective lens
+  const scopeEyeBell=cy(.034,.05,gMat(0x1a1a1a,.3,.85));pl(scopeEyeBell,0,.106,.12,Math.PI/2);g.add(scopeEyeBell);
+  const scopeEye=cy(.03,.012,gMat(0x001122,.05,.1));pl(scopeEye,0,.106,.148,Math.PI/2);g.add(scopeEye);// eyepiece lens
+  // Turrets (elevation and windage)
+  const turrEl=cy(.012,.022,mfg);pl(turrEl,0,.128,-.04);g.add(turrEl);// elevation
+  const turrWi=cy(.012,.022,mfg);pl(turrWi,.038,.106,-.04,0,0,Math.PI/2);g.add(turrWi);// windage
+  // Rings (scope mounts)
+  const r1=bx(.078,.018,.028,mfg);pl(r1,0,.082,.02);g.add(r1);
+  const r2=bx(.078,.018,.028,mfg);pl(r2,0,.082,-.09);g.add(r2);
+  // Bolt handle
+  const boltBody=bx(.062,.016,.05,blk);pl(boltBody,0,.04,-.02);g.add(boltBody);
+  const boltKnob=new THREE.Mesh(new THREE.SphereGeometry(.016,10,10),blk);boltKnob.position.set(.052,.04,-.02);boltKnob.castShadow=true;g.add(boltKnob);
+  // Barrel (26", free-floated, #5 contour — heavy)
+  const brlBase=cy(.026,.1,blk);pl(brlBase,0,.04,-.25,Math.PI/2);g.add(brlBase);
+  const brlMid=cy(.022,.28,blk);pl(brlMid,0,.04,-.45,Math.PI/2);g.add(brlMid);
+  const brlEnd=cy(.018,.22,blk);pl(brlEnd,0,.04,-.69,Math.PI/2);g.add(brlEnd);
+  // Muzzle crown
+  const crown=cy(.02,.012,mfg);pl(crown,0,.04,-.805,Math.PI/2);g.add(crown);
+  // Trigger (exposed, adj.)
+  const trigger=bx(.006,.04,.016,mfg);pl(trigger,0,-.006,.06,.15);g.add(trigger);
+  // Detachable box mag (short, 5-rd)
+  const dmag=bx(.05,.06,.04,blk);pl(dmag,0,-.03,.03);g.add(dmag);
+  return g;
+}
+
+// ── Desert Eagle ── gas-operated, massive triangular frame, long barrel, big grip
+function buildDeagle(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1a1c,.32,.88),poly=gMat(0x111212,.55,.12),mfg=gMat(0x202224,.3,.92),chrom=gMat(0xcccccc,.18,.95);
+  // Massive slide — boxy with triangular cross-section
+  add(g,bx(.078,.072,.24,blk),0,.026,-.11);
+  add(g,bx(.072,.012,.22,mfg),0,.066,-.11); // top flat
+  // Frame (lower)
+  add(g,bx(.07,.052,.2,blk),0,-.012,-.08);
+  // Long heavy barrel
+  add(g,cy(.018,.32,blk),0,.026,-.3,Math.PI/2);
+  add(g,cy(.022,.08,mfg),0,.026,-.14,Math.PI/2); // barrel hood
+  // Under-barrel rail / weight
+  add(g,bx(.06,.018,.2,poly),0,-.006,-.12);
+  // Grip — wide serrated panels
+  add(g,bx(.066,.13,.068,poly),0,-.088,.04,.22);
+  add(g,bx(.07,.008,.058,mfg),0,-.018,.035); // trigger guard front
+  add(g,bx(.068,.008,.02,mfg),0,-.018,.075); // trigger guard back
+  // Hammer (exposed)
+  add(g,bx(.014,.025,.018,blk),0,.055,-.01);
+  // Rear sight
+  add(g,bx(.028,.01,.008,mfg),0,.066,-.06);
+  // Front sight blade
+  add(g,bx(.008,.014,.006,mfg),0,.066,-.27);
+  // Magazine base plate (visible below grip)
+  add(g,bx(.064,.012,.064,mfg),0,-.158,.036);
+  return g;
+}
+
+// ── M9 Beretta ── open-top slide, 15-rd double-stack, exposed barrel hood
+function buildM9(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1c1e20,.38,.86),poly=gMat(0x181a1a,.6,.1),mfg=gMat(0x1e2022,.3,.9);
+  // Slide (open-top — slightly narrower on top)
+  add(g,bx(.068,.058,.22,blk),0,.022,-.1);
+  add(g,bx(.06,.006,.18,mfg),0,.054,-.09); // top rail/flat
+  // Open-top cutout (simulated by narrower box)
+  add(g,bx(.04,.028,.1,gMat(0x0a0b0c,.5,.8)),0,.04,-.08); // open-top visual
+  // Frame
+  add(g,bx(.066,.048,.2,blk),0,-.015,-.08);
+  // Barrel (slightly exposed past slide)
+  add(g,cy(.015,.24,blk),0,.022,-.26,Math.PI/2);
+  add(g,cy(.018,.04,mfg),0,.022,-.13,Math.PI/2); // barrel hood
+  // Trigger guard with rounded front
+  add(g,bx(.064,.01,.06,poly),0,-.018,.04);
+  add(g,bx(.012,.036,.01,poly),0,-.006,.07); // rounded front
+  // Double-stack grip (slightly wider)
+  add(g,bx(.068,.12,.062,poly),0,-.086,.05,.15);
+  // Serrations on front/back of grip
+  for(let i=0;i<4;i++){add(g,bx(.07,.004,.06,gMat(0x0d0e0e,.6,.1)),0,-.048+i*.018,.05);}
+  // Hammer
+  add(g,bx(.012,.02,.014,blk),0,.048,.01);
+  // Sights
+  add(g,bx(.026,.009,.006,mfg),0,.054,-.05);
+  add(g,bx(.007,.012,.005,mfg),0,.054,-.23);
+  // Mag base
+  add(g,bx(.066,.01,.06,mfg),0,-.15,.046);
+  return g;
+}
+
+// ── USP .45 ── H&K polymer frame, distinctive boxy profile, short barrel, control lever
+function buildUSP(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.86),poly=gMat(0x161818,.65,.08),mfg=gMat(0x1e2022,.3,.9);
+  // Slide — flat sides, distinctive profile
+  add(g,bx(.072,.062,.2,blk),0,.02,-.09);
+  add(g,bx(.065,.01,.18,mfg),0,.054,-.09); // top flat
+  // Boxy frame
+  add(g,bx(.07,.05,.18,poly),0,-.016,-.08);
+  // Barrel (short, barely protruding)
+  add(g,cy(.016,.22,blk),0,.02,-.24,Math.PI/2);
+  add(g,cy(.02,.04,mfg),0,.02,-.12,Math.PI/2); // hood
+  // Underside rail (USP has integral rail)
+  add(g,bx(.068,.016,.16,poly),0,-.012,-.1);
+  // Control lever (H&K decocking lever — visible on left side)
+  add(g,bx(.005,.022,.028,mfg),.038,.008,.0);
+  // Trigger guard — squared off
+  add(g,bx(.068,.01,.056,poly),0,-.02,.04);
+  add(g,bx(.014,.04,.01,poly),0,-.008,.07); // square front
+  // Polymer grip with finger grooves
+  add(g,bx(.07,.115,.062,poly),0,-.085,.05,.12);
+  for(let i=0;i<3;i++){add(g,bx(.072,.005,.055,gMat(0x0d0e0e,.65,.05)),0,-.062+i*.022,.052);}
+  // Rear sight
+  add(g,bx(.03,.01,.007,mfg),0,.054,-.04);
+  // Front sight (high-profile)
+  add(g,bx(.008,.015,.006,mfg),0,.056,-.22);
+  // Mag base
+  add(g,bx(.068,.01,.058,mfg),0,-.148,.046);
+  return g;
+}
+
+// ── AK-47 style ── wood/metal, curved mag, gas tube, distinct muzzle
+function buildAK47(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),wood=gMat(0x4a2c0a,.82,.04),mfg=gMat(0x202224,.32,.9),poly=gMat(0x181818,.6,.12);
+  // Receiver
+  add(g,bx(.075,.058,.28,blk),0,.03,-.08);
+  // Dust cover (flat top)
+  add(g,bx(.074,.01,.22,mfg),0,.062,-.08);
+  // Charging handle (right side knob)
+  add(g,bx(.012,.018,.022,blk),.042,.04,-.04);
+  // Gas tube over barrel
+  add(g,cy(.01,.22,mfg),0,.075,-.26,Math.PI/2);
+  // Barrel
+  add(g,cy(.014,.38,blk),0,.03,-.38,Math.PI/2);
+  // Slant muzzle brake (AK distinctive)
+  add(g,cy(.016,.02,mfg),0,.03,-.575,Math.PI/2);
+  add(g,bx(.02,.022,.008,mfg),0,.044,-.58);
+  // Front sight post (tall, hooded)
+  add(g,cy(.008,.06,mfg),0,.03,-.52);
+  add(g,bx(.024,.008,.016,mfg),0,.064,-.52);
+  // Rear tangent sight
+  add(g,bx(.018,.022,.012,mfg),0,.065,-.04);
+  // Handguard — wood upper+lower
+  add(g,bx(.068,.022,.2,wood),0,.05,-.22);
+  add(g,bx(.068,.02,.18,wood),0,.008,-.21);
+  // Curved 30-round banana magazine
+  add(g,bx(.052,.1,.052,blk),0,-.06,-.07,.12);
+  add(g,bx(.048,.04,.048,blk),0,-.105,-.03,.06);
+  add(g,bx(.046,.018,.046,mfg),0,-.138,-.015,.03);
+  // Pistol grip (classic AK polymer)
+  add(g,bx(.054,.11,.06,poly),0,-.076,.095,.25);
+  // Trigger guard
+  add(g,bx(.052,.008,.052,mfg),0,-.016,.068);
+  // Fixed wood stock
+  add(g,bx(.062,.048,.2,wood),0,.01,.2);
+  add(g,bx(.058,.06,.05,wood),0,-.01,.32);
+  // Stock plate
+  add(g,bx(.06,.07,.012,mfg),0,.005,.34);
+  return g;
+}
+
+// ── Skorpion Micro SMG ── tiny, folding stock, top-loading mag
+function buildSkorpion(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1c1e20,.38,.86),mfg=gMat(0x202224,.3,.9),poly=gMat(0x151617,.6,.1);
+  // Very compact receiver
+  add(g,bx(.064,.052,.15,blk),0,.02,-.04);
+  // Short barrel
+  add(g,cy(.012,.16,blk),0,.02,-.2,Math.PI/2);
+  // Muzzle
+  add(g,cy(.014,.016,mfg),0,.02,-.285,Math.PI/2);
+  // Slim grip
+  add(g,bx(.054,.1,.05,poly),0,-.068,.04,.2);
+  // Small trigger guard
+  add(g,bx(.05,.008,.04,mfg),0,-.012,.05);
+  // Compact magazine (top-loading style, curved down front)
+  add(g,bx(.038,.088,.036,blk),0,-.06,-.028,.15);
+  add(g,bx(.036,.018,.032,mfg),0,-.105,-.02,.1);
+  // Folded wire stock (characteristic Skorpion)
+  add(g,bx(.008,.006,.1,mfg),.03,.02,.12);
+  add(g,bx(.008,.006,.1,mfg),-.03,.02,.12);
+  add(g,bx(.068,.006,.006,mfg),0,.02,.22);
+  // Sights
+  add(g,bx(.014,.016,.006,mfg),0,.05,-.12);
+  add(g,bx(.008,.012,.005,mfg),0,.05,-.26);
+  // Charging handle (left side)
+  add(g,bx(.012,.012,.018,blk),-.038,.02,-.01);
+  return g;
+}
+
+// ── RPD Pro LMG ── drum mag, long barrel, bipod, carry handle
+function buildRPD(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),wood=gMat(0x3d1f0a,.8,.04),mfg=gMat(0x1e2022,.32,.9);
+  // Receiver
+  add(g,bx(.076,.065,.32,blk),0,.03,-.08);
+  // Dust cover
+  add(g,bx(.074,.012,.28,mfg),0,.068,-.08);
+  // Long barrel
+  add(g,cy(.016,.44,blk),0,.03,-.46,Math.PI/2);
+  add(g,cy(.02,.06,mfg),0,.03,-.16,Math.PI/2);
+  // Bipod legs (deployed)
+  add(g,bx(.004,.12,.008,mfg),-.04,-.036,-.42);
+  add(g,bx(.004,.12,.008,mfg),.04,-.036,-.42);
+  add(g,bx(.092,.006,.008,mfg),0,-.03,-.42);
+  // Flash hider
+  add(g,cy(.018,.04,mfg),0,.03,-.685,Math.PI/2);
+  add(g,bx(.02,.024,.006,mfg),0,.054,-.69);
+  // Top carry handle
+  add(g,bx(.068,.01,.16,mfg),0,.085,-.06);
+  add(g,bx(.008,.038,.008,mfg),-.028,.068,-.06);
+  add(g,bx(.008,.038,.008,mfg),.028,.068,-.06);
+  // Drum magazine (100-round RPD pan)
+  const drum=new THREE.Mesh(new THREE.CylinderGeometry(.072,.072,.048,16),blk);pl(drum,-.062,-.04,-.05,0,0,Math.PI/2);drum.castShadow=true;g.add(drum);
+  add(g,bx(.05,.02,.05,mfg),-.062,-.04,-.025); // feed neck
+  // Wood foregrip / stock
+  add(g,bx(.068,.036,.2,wood),0,.008,-.22);
+  add(g,bx(.062,.06,.18,wood),0,.006,.2);
+  // Pistol grip
+  add(g,bx(.056,.1,.056,gMat(0x181818,.6,.1)),0,-.07,.1,.2);
+  // Trigger guard
+  add(g,bx(.054,.008,.05,mfg),0,-.016,.076);
+  return g;
+}
+
+// ── Pump Shotgun Mk2 ── similar to W1200 but tactical: pistol grip, extended tube
+function buildPumpMk2(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.38,.88),poly=gMat(0x111212,.6,.1),mfg=gMat(0x1e2022,.3,.9);
+  // Barrel (longer)
+  add(g,cy(.018,.46,blk),0,.022,-.36,Math.PI/2);
+  // Vented rib
+  add(g,bx(.006,.006,.38,mfg),0,.044,-.31);
+  // Receiver
+  add(g,bx(.075,.062,.2,blk),0,.02,-.08);
+  // Extended magazine tube
+  add(g,cy(.016,.44,mfg),0,-.01,-.36,Math.PI/2);
+  add(g,cy(.018,.02,mfg),0,-.01,-.585,Math.PI/2);
+  // Tactical pump forend (ribbed polymer)
+  add(g,bx(.072,.046,.18,poly),0,-.002,-.3);
+  for(let i=0;i<5;i++)add(g,bx(.074,.004,.016,blk),0,-.002,-(.22+i*.032));
+  // Pistol grip (no stock — pistol-grip shotgun)
+  add(g,bx(.06,.12,.056,poly),0,-.08,.1,.3);
+  // Trigger guard
+  add(g,bx(.058,.01,.05,mfg),0,-.014,.072);
+  // Ejection port
+  add(g,bx(.03,.018,.048,gMat(0x0a0b0c,.5,.9)),.038,.032,-.055);
+  // Bead sight
+  const bead=new THREE.Mesh(new THREE.SphereGeometry(.006,6,6),gMat(0xdddddd,.2,.95));bead.position.set(0,.044,-.58);g.add(bead);
+  // Short AR-style stock
+  add(g,bx(.068,.045,.12,poly),0,.012,.18);
+  add(g,bx(.065,.052,.015,poly),0,.008,.245);
+  return g;
+}
+
+// ── M21 Semi-Auto Sniper ── M14 platform, wood/black, scope, 20-round mag
+function buildM21(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),wood=gMat(0x2e1a08,.78,.04),mfg=gMat(0x1e2022,.32,.9);
+  // Wood/synthetic stock
+  add(g,bx(.07,.072,.42,wood),0,-.01,.06);
+  add(g,bx(.064,.04,.18,wood),0,-.012,-.28);
+  add(g,bx(.068,.062,.15,wood),0,.014,.26);
+  add(g,bx(.066,.074,.014,gMat(0x111,.9,.03)),0,.01,.345);
+  // Action / receiver
+  add(g,bx(.075,.065,.26,blk),0,.04,.0);
+  // Barrel (medium length, 22")
+  add(g,cy(.016,.3,blk),0,.04,-.3,Math.PI/2);
+  add(g,cy(.02,.06,blk),0,.04,-.16,Math.PI/2);
+  // Flash hider (birdcage)
+  add(g,cy(.018,.04,mfg),0,.04,-.455,Math.PI/2);
+  add(g,bx(.02,.022,.006,mfg),0,.062,-.46);
+  // 20-round box mag (M14 style, slim)
+  add(g,bx(.05,.12,.05,blk),0,-.05,.04,.08);
+  // Scope (Leupold-style tactical, shorter than R700)
+  add(g,cy(.026,.24,gMat(0x1a1a1a,.3,.85)),0,.102,-.03,Math.PI/2);
+  add(g,cy(.038,.05,gMat(0x1a1a1a,.3,.85)),0,.102,-.16,Math.PI/2);
+  add(g,cy(.032,.045,gMat(0x1a1a1a,.3,.85)),0,.102,.1,Math.PI/2);
+  add(g,cy(.012,.02,mfg),0,.122,-.03); // elevation turret
+  // Scope bases & rings
+  add(g,bx(.076,.01,.05,mfg),0,.076,.0);
+  add(g,bx(.076,.01,.05,mfg),0,.076,-.08);
+  // Gas piston rod (M14 visible)
+  add(g,cy(.008,.2,mfg),0,.062,-.2,Math.PI/2);
+  // Pistol wrist / trigger guard
+  add(g,bx(.054,.092,.07,wood),0,-.034,.12,.22);
+  add(g,bx(.052,.01,.05,mfg),0,-.016,.072);
+  return g;
+}
+
+// ── Mini Uzi ── extremely compact, top-loading, folding wire stock
+function buildMiniUzi(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1c1e20,.38,.86),mfg=gMat(0x1e2022,.3,.9);
+  // Very small boxy receiver
+  add(g,bx(.07,.058,.13,blk),0,.018,.0);
+  // Top-loading magazine (Uzi characteristic)
+  add(g,bx(.042,.092,.04,blk),0,.055,.01);
+  // Short barrel
+  add(g,cy(.013,.14,blk),0,.018,-.19,Math.PI/2);
+  // Muzzle
+  add(g,cy(.015,.016,mfg),0,.018,-.27,Math.PI/2);
+  // Pistol grip (integral with receiver)
+  add(g,bx(.06,.105,.054,gMat(0x141516,.6,.1)),0,-.07,.04,.15);
+  // Trigger guard
+  add(g,bx(.058,.01,.044,mfg),0,-.01,.055);
+  // Folded wire stock (pair of rods folding down)
+  add(g,bx(.008,.006,.11,mfg),.028,.018,.12);
+  add(g,bx(.008,.006,.11,mfg),-.028,.018,.12);
+  add(g,bx(.064,.006,.006,mfg),0,.018,.23);
+  // Cocking knob (top)
+  add(g,bx(.014,.016,.016,blk),0,.08,-.04);
+  // Sights
+  add(g,bx(.012,.014,.006,mfg),0,.048,-.1);
+  add(g,bx(.008,.012,.005,mfg),0,.048,-.24);
+  return g;
+}
+
+// ── Heavy LMG ── M60-style, bipod, belt-fed, carry handle, very long
+function buildHeavyLMG(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),wood=gMat(0x2e1a08,.78,.04),mfg=gMat(0x1e2022,.32,.9);
+  // Heavy receiver
+  add(g,bx(.082,.072,.36,blk),0,.034,-.08);
+  // Top cover / feed tray
+  add(g,bx(.08,.02,.28,mfg),0,.08,-.08);
+  // Very long heavy barrel
+  add(g,cy(.02,.5,blk),0,.034,-.54,Math.PI/2);
+  add(g,cy(.024,.08,blk),0,.034,-.16,Math.PI/2);
+  // Flash hider (M60 style birdcage)
+  add(g,cy(.022,.048,mfg),0,.034,-.8,Math.PI/2);
+  add(g,bx(.026,.03,.006,mfg),0,.064,-.805);
+  // Bipod (deployed, longer legs)
+  add(g,bx(.005,.16,.009,mfg),-.05,-.052,-.62);
+  add(g,bx(.005,.16,.009,mfg),.05,-.052,-.62);
+  add(g,bx(.104,.007,.009,mfg),0,-.046,-.62);
+  // Carry handle
+  add(g,bx(.072,.012,.18,mfg),0,.1,-.06);
+  add(g,bx(.009,.042,.01,mfg),-.028,.082,-.06);
+  add(g,bx(.009,.042,.01,mfg),.028,.082,-.06);
+  // Rear stock (wood, straight)
+  add(g,bx(.068,.06,.22,wood),0,.018,.22);
+  add(g,bx(.065,.065,.016,wood),0,.014,.34);
+  // Foregrip area (bipod mount)
+  add(g,bx(.074,.04,.18,wood),0,.008,-.44);
+  // Pistol grip
+  add(g,bx(.058,.108,.062,gMat(0x141516,.6,.1)),0,-.076,.1,.2);
+  add(g,bx(.054,.01,.052,mfg),0,-.014,.076);
+  // Belt box (right side, large)
+  add(g,bx(.052,.08,.12,gMat(0x2a2e22,.7,.1)),.07,.01,-.1);
+  return g;
+}
+
+// ── Semi-Auto Shotgun ── SPAS-12 style, folding stock, longer barrel
+function buildSemiShotgun(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.38,.88),poly=gMat(0x111212,.6,.1),mfg=gMat(0x1e2022,.3,.9);
+  // Receiver (boxy SPAS-12 profile)
+  add(g,bx(.08,.068,.24,blk),0,.022,-.06);
+  // Top ventilated rib
+  add(g,bx(.007,.007,.42,mfg),0,.06,-.3);
+  // Long barrel
+  add(g,cy(.02,.46,blk),0,.022,-.37,Math.PI/2);
+  // Magazine tube (under barrel)
+  add(g,cy(.017,.4,mfg),0,-.006,-.32,Math.PI/2);
+  add(g,cy(.019,.016,mfg),0,-.006,-.525,Math.PI/2);
+  // Pump / forend (even if semi, has manual pump option)
+  add(g,bx(.076,.05,.18,poly),0,.0,-.32);
+  for(let i=0;i<4;i++)add(g,bx(.078,.004,.016,blk),0,.0,-.24+i*.032);
+  // Hook stock (SPAS-12 characteristic folding hook stock)
+  add(g,bx(.07,.048,.18,blk),0,.014,.2);
+  add(g,bx(.014,.068,.016,blk),.032,.034,.3);
+  add(g,bx(.014,.068,.016,blk),-.032,.034,.3);
+  // Pistol grip
+  add(g,bx(.062,.118,.062,poly),0,-.078,.1,.3);
+  add(g,bx(.058,.01,.054,mfg),0,-.014,.074);
+  // Bead sight
+  const bead2=new THREE.Mesh(new THREE.SphereGeometry(.007,6,6),gMat(0xdddddd,.2,.95));bead2.position.set(0,.058,-.58);g.add(bead2);
+  return g;
+}
+
+// ── R7000 Heavy Bolt Sniper ── ultra-long barrel, muzzle brake, heavy stock, big scope
+function buildR7000(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),stock=gMat(0x1a1810,.72,.04),mfg=gMat(0x1e2022,.32,.9);
+  // Massive chassis stock (flat dark grey)
+  add(g,bx(.075,.08,.46,stock),0,-.008,.06);
+  add(g,bx(.068,.046,.22,stock),0,-.01,-.28);
+  add(g,bx(.072,.07,.16,stock),0,.016,.28);
+  add(g,bx(.07,.082,.016,gMat(0x111,.88,.03)),0,.012,.37);
+  // Long action receiver
+  add(g,bx(.08,.07,.28,blk),0,.044,.0);
+  // Very long heavy barrel (30")
+  add(g,cy(.022,.14,blk),0,.044,-.25,Math.PI/2);
+  add(g,cy(.018,.36,blk),0,.044,-.52,Math.PI/2);
+  add(g,cy(.014,.22,blk),0,.044,-.78,Math.PI/2);
+  // Muzzle brake (large, side-ported)
+  add(g,cy(.024,.06,mfg),0,.044,-.91,Math.PI/2);
+  add(g,bx(.032,.036,.008,mfg),0,.08,-.915);
+  add(g,bx(.026,.01,.008,mfg),0,.044,-.918);
+  // Bolt handle (larger, spherical knob)
+  add(g,bx(.07,.018,.056,blk),0,.046,-.03);
+  const bk2=new THREE.Mesh(new THREE.SphereGeometry(.022,10,10),blk);bk2.position.set(.06,.046,-.03);bk2.castShadow=true;g.add(bk2);
+  // Large tactical scope (50mm objective)
+  add(g,cy(.032,.32,gMat(0x1a1a1a,.3,.85)),0,.118,-.04,Math.PI/2);
+  add(g,cy(.05,.072,gMat(0x1a1a1a,.3,.85)),0,.118,-.22,Math.PI/2);
+  add(g,cy(.044,.02,gMat(0x001122,.05,.1)),0,.118,-.264,Math.PI/2);
+  add(g,cy(.038,.058,gMat(0x1a1a1a,.3,.85)),0,.118,.15,Math.PI/2);
+  add(g,cy(.034,.014,gMat(0x001122,.05,.1)),0,.118,.183,Math.PI/2);
+  add(g,cy(.014,.026,mfg),0,.148,-.04);
+  add(g,cy(.014,.026,mfg),.042,.118,-.04,0,0,Math.PI/2);
+  // Scope rings (3-piece)
+  add(g,bx(.086,.022,.034,mfg),0,.088,.02);
+  add(g,bx(.086,.022,.034,mfg),0,.088,-.1);
+  add(g,bx(.086,.022,.034,mfg),0,.088,-.18);
+  // Detachable 5-round magazine
+  add(g,bx(.056,.07,.046,blk),0,-.034,.04);
+  // Trigger group
+  add(g,bx(.056,.096,.072,stock),0,-.036,.14,.2);
+  add(g,bx(.054,.01,.054,mfg),0,-.014,.076);
+  return g;
+}
+
+// ── Cold 45 Classic Pistol ── 1911-style, fixed sights, wood grip panels
+function buildCold45(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1c1e1f,.34,.9),wood=gMat(0x4a2c0a,.82,.04),mfg=gMat(0x202224,.3,.92);
+  // Slide (1911 round-top profile)
+  add(g,bx(.068,.058,.2,blk),0,.022,-.09);
+  // Slide serrations (rear)
+  for(let i=0;i<5;i++)add(g,bx(.07,.006,.008,gMat(0x111214,.38,.9)),0,.04,-.01+i*.014);
+  // Frame (slightly narrower than slide)
+  add(g,bx(.065,.05,.18,blk),0,-.014,-.08);
+  // Short barrel
+  add(g,cy(.016,.2,blk),0,.022,-.23,Math.PI/2);
+  // Trigger guard (rounded, 1911 style)
+  add(g,bx(.062,.01,.05,blk),0,-.018,.04);
+  add(g,bx(.014,.038,.01,blk),0,-.006,.065);
+  // Wood grip panels (1911 characteristic)
+  add(g,bx(.072,.115,.062,wood),0,-.082,.056,.12);
+  // Grip safety (rear)
+  add(g,bx(.01,.032,.012,blk),.036,.014,.05);
+  // Hammer (spur type)
+  add(g,bx(.012,.022,.018,blk),0,.054,.014);
+  // Thumb safety lever
+  add(g,bx(.005,.012,.018,mfg),.038,.026,.0);
+  // Fixed sights
+  add(g,bx(.026,.01,.007,mfg),0,.054,-.04);
+  add(g,bx(.008,.014,.006,mfg),0,.054,-.21);
+  // Mag base
+  add(g,bx(.065,.012,.06,mfg),0,-.148,.048);
+  return g;
+}
+
+// ── G3 Semi-Auto Rifle ── roller-delayed blowback, straight mag, fixed stock
+function buildG3(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),poly=gMat(0x161718,.62,.1),mfg=gMat(0x1e2022,.32,.9);
+  add(g,bx(.076,.06,.32,blk),0,.03,-.08);
+  add(g,bx(.042,.1,.05,blk),0,-.06,-.04); // straight 20-rd mag
+  add(g,bx(.022,.014,.02,mfg),-.044,.04,-.02); // T-bar charging handle
+  add(g,bx(.012,.014,.032,mfg),-.038,.04,-.02);
+  add(g,cy(.015,.38,blk),0,.03,-.38,Math.PI/2);
+  add(g,cy(.017,.04,mfg),0,.03,-.585,Math.PI/2);
+  add(g,bx(.022,.024,.006,mfg),0,.054,-.59);
+  add(g,bx(.072,.038,.22,poly),0,.008,-.22); // handguard
+  add(g,bx(.056,.105,.062,poly),0,-.074,.1,.22); // pistol grip
+  add(g,bx(.064,.05,.22,poly),0,.012,.22); // stock
+  add(g,bx(.062,.055,.016,poly),0,.008,.34);
+  add(g,cy(.018,.022,mfg),0,.066,-.02,Math.PI/2); // rear sight drum
+  add(g,bx(.054,.01,.056,mfg),0,-.014,.072);
+  return g;
+}
+
+// ── P90 Heavy SMG ── bullpup, top-feeding 50-rd horizontal mag, compact
+function buildP90(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1c1e22,.38,.8),poly=gMat(0x141618,.6,.1),mfg=gMat(0x1e2022,.3,.9);
+  // Bullpup body (longer than normal SMG, stock integrated)
+  add(g,bx(.072,.068,.34,blk),0,.016,.04);
+  // Characteristic horizontal 50-rd top magazine
+  add(g,bx(.34,.022,.072,gMat(0x2a2c30,.5,.3)),0,.056,.04);
+  // Short barrel (barely protrudes)
+  add(g,cy(.013,.18,blk),0,.016,-.25,Math.PI/2);
+  add(g,cy(.016,.02,mfg),0,.016,-.345,Math.PI/2);
+  // Integrated trigger guard
+  add(g,bx(.07,.01,.052,poly),0,-.02,.06);
+  add(g,bx(.016,.04,.01,poly),0,-.008,.084);
+  // Pistol grip (very short, bullpup)
+  add(g,bx(.062,.1,.055,poly),0,-.072,.09,.1);
+  // Ejection port (bottom)
+  add(g,bx(.028,.014,.04,gMat(0x0a0b0c,.5,.9)),0,-.032,-.08);
+  // Rear sight / rail
+  add(g,bx(.07,.01,.16,mfg),0,.055,.02);
+  // Front sight
+  add(g,bx(.012,.016,.006,mfg),0,.048,-.3);
+  return g;
+}
+
+// ── Dragunov SVD ── semi-auto sniper, thumbhole stock, distinctive cutout
+function buildDragunov(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),wood=gMat(0x3d1f0a,.8,.04),mfg=gMat(0x1e2022,.32,.9);
+  // Receiver
+  add(g,bx(.075,.062,.32,blk),0,.038,.0);
+  // Distinctive thumbhole wooden stock with cutout
+  add(g,bx(.065,.07,.4,wood),0,-.005,.1);
+  add(g,bx(.062,.042,.14,wood),0,.018,.3); // comb
+  add(g,bx(.06,.072,.016,gMat(0x111,.9,.03)),0,.006,.38); // recoil pad
+  // Pistol grip (integral thumbhole)
+  add(g,bx(.054,.1,.07,wood),0,-.042,.09,.25);
+  // Very long barrel (24")
+  add(g,cy(.016,.28,blk),0,.038,-.3,Math.PI/2);
+  add(g,cy(.012,.22,blk),0,.038,-.56,Math.PI/2);
+  add(g,cy(.018,.06,mfg),0,.038,-.175,Math.PI/2);
+  // Flash hider (slotted)
+  add(g,cy(.018,.04,mfg),0,.038,-.685,Math.PI/2);
+  add(g,bx(.022,.02,.006,mfg),0,.058,-.69);
+  // Curved 10-rd magazine
+  add(g,bx(.046,.08,.048,blk),0,-.048,.02,.08);
+  add(g,bx(.042,.03,.044,blk),0,-.092,.01,.04);
+  // PSO-1 scope (distinctive Soviet)
+  add(g,cy(.026,.28,gMat(0x1a1a1a,.3,.85)),0,.11,-.02,Math.PI/2);
+  add(g,cy(.036,.054,gMat(0x1a1a1a,.3,.85)),0,.11,-.175,Math.PI/2);
+  add(g,cy(.03,.012,gMat(0x001122,.05,.1)),0,.11,-.205,Math.PI/2);
+  add(g,cy(.03,.046,gMat(0x1a1a1a,.3,.85)),0,.11,.122,Math.PI/2);
+  add(g,cy(.026,.012,gMat(0x001122,.05,.1)),0,.11,.15,Math.PI/2);
+  // Range drum (PSO-1 distinctive side knob)
+  const drum=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.03,8),mfg);pl(drum,-.048,.11,.05,0,0,Math.PI/2);drum.castShadow=true;g.add(drum);
+  // Scope mounts
+  add(g,bx(.078,.016,.04,mfg),0,.082,.02);
+  add(g,bx(.078,.016,.04,mfg),0,.082,-.09);
+  // Charging handle (right)
+  add(g,bx(.016,.014,.024,blk),.044,.042,.04);
+  // Trigger guard
+  add(g,bx(.054,.01,.05,mfg),0,-.012,.072);
+  return g;
+}
+
+// ── Barrett M82 .50 Cal ── semi-auto, massive receiver, huge scope, muzzle brake, bipod
+function buildBarrett(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),mfg=gMat(0x1e2022,.32,.9),poly=gMat(0x141618,.62,.1);
+  // Massive receiver — longer and taller than any other gun
+  add(g,bx(.09,.082,.38,blk),0,.04,.0);
+  // Top rail (full length)
+  add(g,bx(.088,.012,.34,mfg),0,.086,.0);
+  // Bolt handle (right side, large)
+  add(g,bx(.018,.016,.032,blk),.054,.052,.04);
+  const bkn=new THREE.Mesh(new THREE.SphereGeometry(.014,8,8),blk);bkn.position.set(.062,.052,.04);bkn.castShadow=true;g.add(bkn);
+  // Very long heavy barrel (29")
+  add(g,cy(.024,.12,blk),0,.04,-.26,Math.PI/2);
+  add(g,cy(.02,.32,blk),0,.04,-.52,Math.PI/2);
+  add(g,cy(.016,.18,blk),0,.04,-.82,Math.PI/2);
+  // Large muzzle brake (Barrett M82 style)
+  add(g,bx(.042,.046,.07,mfg),0,.04,-.93);
+  add(g,bx(.044,.008,.07,mfg),0,.07,-.93);
+  add(g,bx(.044,.008,.07,mfg),0,.01,-.93);
+  add(g,bx(.008,.048,.072,mfg),.022,.04,-.93);
+  add(g,bx(.008,.048,.072,mfg),-.022,.04,-.93);
+  // Bipod (deployed, long)
+  add(g,bx(.006,.18,.01,mfg),-.055,-.05,-.58);
+  add(g,bx(.006,.18,.01,mfg),.055,-.05,-.58);
+  add(g,bx(.114,.008,.01,mfg),0,-.044,-.58);
+  add(g,bx(.006,.06,.01,mfg),-.055,-.14,-.56);
+  add(g,bx(.006,.06,.01,mfg),.055,-.14,-.56);
+  // Pistol grip
+  add(g,bx(.06,.115,.068,poly),0,-.076,.12,.28);
+  add(g,bx(.058,.01,.06,mfg),0,-.014,.084);
+  // Skeletal thumbhole stock
+  add(g,bx(.078,.062,.32,blk),0,.028,.26);
+  add(g,bx(.074,.028,.28,poly),0,.028,.27);
+  add(g,bx(.076,.068,.016,gMat(0x111,.9,.03)),0,.024,.43);
+  // Cheek riser
+  add(g,bx(.076,.034,.12,blk),0,.078,.26);
+  // 10-rd detachable mag
+  add(g,bx(.06,.1,.055,blk),0,-.054,.04);
+  // Huge Schmidt & Bender style scope
+  add(g,cy(.03,.38,gMat(0x1a1a1a,.3,.85)),0,.128,.0,Math.PI/2);
+  add(g,cy(.048,.08,gMat(0x1a1a1a,.3,.85)),0,.128,-.22,Math.PI/2);
+  add(g,cy(.042,.016,gMat(0x001122,.05,.1)),0,.128,-.265,Math.PI/2);
+  add(g,cy(.038,.058,gMat(0x1a1a1a,.3,.85)),0,.128,.19,Math.PI/2);
+  add(g,cy(.034,.014,gMat(0x001122,.05,.1)),0,.128,.222,Math.PI/2);
+  add(g,cy(.016,.03,mfg),0,.158,.02);
+  add(g,cy(.016,.03,mfg),.048,.128,.02,0,0,Math.PI/2);
+  add(g,bx(.096,.02,.038,mfg),0,.096,.04);
+  add(g,bx(.096,.02,.038,mfg),0,.096,-.1);
+  return g;
+}
+
+// ── G36C Tactical Rifle ── compact bullpup-ish, carry handle/scope combo, folding stock
+function buildG36C(){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.36,.88),poly=gMat(0x181a1c,.6,.1),mfg=gMat(0x1e2022,.32,.9);
+  // Compact receiver
+  add(g,bx(.074,.065,.26,blk),0,.024,.0);
+  // Integrated carry handle with optics rail (G36 signature)
+  add(g,bx(.072,.018,.2,mfg),0,.074,.0);
+  add(g,bx(.008,.038,.008,mfg),-.03,.056,.04);
+  add(g,bx(.008,.038,.008,mfg),.03,.056,.04);
+  // Built-in red dot on carry handle
+  add(g,bx(.04,.026,.032,gMat(0x1a1a1a,.3,.85)),0,.082,.04);
+  add(g,cy(.01,.028,gMat(0x001122,.05,.1)),0,.082,.058,Math.PI/2);
+  // Folding polymer stock (unfolded, straight)
+  add(g,bx(.068,.044,.22,poly),0,.016,.22);
+  add(g,bx(.064,.05,.016,poly),0,.012,.34);
+  // Short barrel
+  add(g,cy(.015,.24,blk),0,.024,-.26,Math.PI/2);
+  add(g,cy(.014,.08,blk),0,.024,-.44,Math.PI/2);
+  // Muzzle device (G36 style)
+  add(g,cy(.016,.032,mfg),0,.024,-.495,Math.PI/2);
+  add(g,bx(.02,.018,.006,mfg),0,.042,-.5);
+  // Polymer handguard with Picatinny rails
+  add(g,bx(.07,.044,.18,poly),0,.0,-.22);
+  add(g,bx(.072,.006,.18,mfg),0,.024,-.22); // top rail
+  add(g,bx(.006,.018,.16,mfg),.037,.024,-.22); // side rail
+  // Pistol grip
+  add(g,bx(.058,.108,.064,poly),0,-.074,.1,.18);
+  add(g,bx(.054,.01,.054,mfg),0,-.014,.074);
+  // 30-round curved magazine
+  add(g,bx(.046,.11,.05,blk),0,-.06,-.04,.08);
+  add(g,bx(.044,.02,.046,mfg),0,-.118,-.03,.04);
+  // Charging handle (top, ambidextrous)
+  add(g,bx(.026,.014,.018,blk),0,.062,-.04);
+  return g;
+}
+
+const GUN_BUILDERS=[buildM16,buildMP5,buildM249,buildW1200,buildR700,buildDeagle,buildM9,buildUSP,buildAK47,buildSkorpion,buildRPD,buildPumpMk2,buildM21,buildM16,buildMiniUzi,buildHeavyLMG,buildSemiShotgun,buildR7000,buildCold45,buildG3,buildP90,buildDragunov,buildBarrett,buildG36C];
+const GUN_POS=[
+  [.24,-.2,-.44],   // 0 Burst AR
+  [.2, -.18,-.36],  // 1 SMG
+  [.26,-.22,-.48],  // 2 LMG
+  [.22,-.19,-.4 ],  // 3 Pump Shotgun
+  [.22,-.2, -.42],  // 4 Bolt Sniper
+  [.2, -.18,-.32],  // 5 Heavy Pistol
+  [.19,-.17,-.3 ],  // 6 Standard Pistol
+  [.19,-.17,-.31],  // 7 Pro Pistol
+  [.24,-.2, -.44],  // 8 Classic AR
+  [.18,-.17,-.3 ],  // 9 Micro SMG
+  [.26,-.22,-.5 ],  // 10 Pro LMG
+  [.22,-.19,-.42],  // 11 Pump Mk2
+  [.22,-.2, -.44],  // 12 Semi Sniper
+  [.24,-.2, -.44],  // 13 Standard Rifle
+  [.18,-.17,-.28],  // 14 Mini Uzi
+  [.27,-.22,-.52],  // 15 Heavy LMG
+  [.22,-.19,-.42],  // 16 Semi Shotgun
+  [.23,-.2, -.46],  // 17 R7000
+  [.19,-.17,-.3 ],  // 18 Cold 45
+  [.24,-.2, -.44],  // 19 G3
+  [.2, -.18,-.34],  // 20 P90
+  [.23,-.2, -.46],  // 21 Dragunov
+  [.25,-.22,-.5 ],  // 22 Barrett .50
+  [.22,-.19,-.4 ],  // 23 G36C
+];
+
+// ─── WEAPON DEFINITIONS ───────────────────────────────────
+const WEAPONS=[
+  {id:0,name:'Burst AR',       mode:'BURST', damage:40,  mag:30,  reserve:90,  rate:0,  reload:2.4, spread:.007, pellets:1, bspeed:55, scopeFov:0,  recoil:.06,  cockTime:0,    xSize:24,xGap:5,xThick:1,   dmgN:3,rateN:4,magN:4,rangeN:5,cat:'primary',tier:1,desc:'3-round burst · all-range'},
+  {id:1,name:'SMG',            mode:'AUTO',  damage:22,  mag:30,  reserve:120, rate:12, reload:1.9, spread:.018, pellets:1, bspeed:48, scopeFov:0,  recoil:.035, cockTime:0,    xSize:30,xGap:6,xThick:1,   dmgN:2,rateN:5,magN:3,rangeN:3,cat:'primary',tier:1,desc:'Full auto · fast & close'},
+  {id:2,name:'LMG',            mode:'AUTO',  damage:28,  mag:100, reserve:200, rate:9,  reload:4.0, spread:.022, pellets:1, bspeed:52, scopeFov:0,  recoil:.04,  cockTime:0,    xSize:32,xGap:6,xThick:1.5, dmgN:3,rateN:4,magN:5,rangeN:4,cat:'primary',tier:1,desc:'Full auto · 100-round belt'},
+  {id:3,name:'Pump Shotgun',   mode:'PUMP',  damage:18,  mag:6,   reserve:30,  rate:0,  reload:3.2, spread:.065, pellets:8, bspeed:40, scopeFov:0,  recoil:.1,   cockTime:0.52, xSize:44,xGap:9,xThick:1.5, dmgN:4,rateN:1,magN:1,rangeN:1,cat:'primary',tier:1,desc:'8-pellet pump · close only'},
+  {id:4,name:'Bolt Sniper',    mode:'BOLT',  damage:120, mag:5,   reserve:25,  rate:0,  reload:3.0, spread:.001, pellets:1, bspeed:90, scopeFov:28, recoil:.12,  cockTime:0.7,  xSize:18,xGap:3,xThick:1,   dmgN:5,rateN:1,magN:1,rangeN:5,cat:'primary',tier:1,desc:'Bolt-action · one-shot kill'},
+  // ── PISTOLS ──
+  {id:5,name:'Heavy Pistol',   mode:'SEMI',  damage:75,  mag:7,   reserve:49,  rate:0,  reload:2.0, spread:.012, pellets:1, bspeed:60, scopeFov:0,  recoil:.18,  cockTime:0,    xSize:22,xGap:4,xThick:1,   dmgN:5,rateN:2,magN:1,rangeN:4,cat:'pistol', tier:1,desc:'.50 AE · massive damage · 7-round mag'},
+  {id:6,name:'Standard Pistol',mode:'SEMI',  damage:32,  mag:15,  reserve:90,  rate:0,  reload:1.6, spread:.014, pellets:1, bspeed:52, scopeFov:0,  recoil:.07,  cockTime:0,    xSize:24,xGap:4,xThick:1,   dmgN:2,rateN:3,magN:4,rangeN:3,cat:'pistol', tier:1,desc:'9mm · 15-round mag · reliable'},
+  {id:7,name:'Pro Pistol',     mode:'SEMI',  damage:58,  mag:12,  reserve:60,  rate:0,  reload:1.8, spread:.009, pellets:1, bspeed:56, scopeFov:0,  recoil:.12,  cockTime:0,    xSize:22,xGap:4,xThick:1,   dmgN:4,rateN:2,magN:2,rangeN:4,cat:'pistol', tier:1,desc:'.45 ACP · high damage · accurate'},
+  // ── TIER 2 PRIMARIES (unlocked after wave 4) ──
+  {id:8, name:'Classic AR',    mode:'AUTO',  damage:34,  mag:30,  reserve:120, rate:10, reload:2.2, spread:.014, pellets:1, bspeed:52, scopeFov:0,  recoil:.055, cockTime:0,    xSize:26,xGap:5,xThick:1,   dmgN:3,rateN:4,magN:4,rangeN:4,cat:'primary',tier:2,desc:'Full auto · reliable · wood & steel'},
+  {id:9, name:'Micro SMG',     mode:'AUTO',  damage:18,  mag:20,  reserve:100, rate:15, reload:1.5, spread:.024, pellets:1, bspeed:44, scopeFov:0,  recoil:.025, cockTime:0,    xSize:28,xGap:5,xThick:1,   dmgN:1,rateN:5,magN:3,rangeN:2,cat:'primary',tier:2,desc:'Extreme fire rate · pocket-sized'},
+  {id:10,name:'Pro LMG',       mode:'AUTO',  damage:32,  mag:100, reserve:200, rate:11, reload:4.5, spread:.018, pellets:1, bspeed:54, scopeFov:0,  recoil:.045, cockTime:0,    xSize:32,xGap:6,xThick:1.5, dmgN:3,rateN:4,magN:5,rangeN:4,cat:'primary',tier:2,desc:'Drum-fed · sustained fire'},
+  {id:11,name:'Pump Shotgun II',mode:'PUMP',  damage:22,  mag:8,   reserve:40,  rate:0,  reload:3.0, spread:.058, pellets:8, bspeed:42, scopeFov:0,  recoil:.09,  cockTime:0.48, xSize:44,xGap:9,xThick:1.5, dmgN:4,rateN:2,magN:2,rangeN:1,cat:'primary',tier:2,desc:'Tactical pump · extended tube'},
+  {id:12,name:'Semi Sniper',   mode:'SEMI',  damage:90,  mag:10,  reserve:40,  rate:0,  reload:2.6, spread:.002, pellets:1, bspeed:88, scopeFov:30, recoil:.1,   cockTime:0,    xSize:18,xGap:3,xThick:1,   dmgN:4,rateN:2,magN:2,rangeN:5,cat:'primary',tier:2,desc:'Semi-auto · 10-round mag · fast follow-up'},
+  // ── TIER 3 PRIMARIES (unlocked after wave 8) ──
+  {id:13,name:'Standard Rifle', mode:'AUTO',  damage:38,  mag:30,  reserve:120, rate:9,  reload:2.4, spread:.009, pellets:1, bspeed:55, scopeFov:0,  recoil:.055, cockTime:0,    xSize:24,xGap:5,xThick:1,   dmgN:3,rateN:4,magN:4,rangeN:5,cat:'primary',tier:3,desc:'Full auto · reliable · all-range'},
+  {id:14,name:'Mini SMG',       mode:'AUTO',  damage:20,  mag:25,  reserve:125, rate:18, reload:1.4, spread:.022, pellets:1, bspeed:46, scopeFov:0,  recoil:.022, cockTime:0,    xSize:26,xGap:5,xThick:1,   dmgN:2,rateN:5,magN:3,rangeN:2,cat:'primary',tier:3,desc:'Extreme fire rate · pocket-sized'},
+  {id:15,name:'Heavy LMG',      mode:'AUTO',  damage:36,  mag:100, reserve:200, rate:8,  reload:5.0, spread:.02,  pellets:1, bspeed:55, scopeFov:0,  recoil:.05,  cockTime:0,    xSize:34,xGap:7,xThick:1.5, dmgN:4,rateN:3,magN:5,rangeN:4,cat:'primary',tier:3,desc:'Heavy belt-fed · sustained suppression'},
+  {id:16,name:'Semi Shotgun',   mode:'SEMI',  damage:20,  mag:8,   reserve:40,  rate:0,  reload:2.8, spread:.055, pellets:8, bspeed:44, scopeFov:0,  recoil:.08,  cockTime:0,    xSize:44,xGap:9,xThick:1.5, dmgN:4,rateN:3,magN:2,rangeN:1,cat:'primary',tier:3,desc:'Semi-auto spread · fast follow-up'},
+  {id:17,name:'Heavy Sniper',   mode:'BOLT',  damage:160, mag:5,   reserve:20,  rate:0,  reload:3.5, spread:.0008,pellets:1, bspeed:100,scopeFov:20, recoil:.16,  cockTime:0.85, xSize:16,xGap:3,xThick:1,   dmgN:5,rateN:1,magN:1,rangeN:5,cat:'primary',tier:3,desc:'R7000 · one-shot · extreme range'},
+  // ── TIER 2 PISTOL (unlocked after wave 4) ──
+  {id:18,name:'Classic Pistol', mode:'SEMI',  damage:45,  mag:8,   reserve:48,  rate:0,  reload:1.9, spread:.011, pellets:1, bspeed:54, scopeFov:0,  recoil:.1,   cockTime:0,    xSize:22,xGap:4,xThick:1,   dmgN:3,rateN:2,magN:2,rangeN:3,cat:'pistol', tier:'p2',desc:'Classic style · reliable sidearm'},
+  // ── TIER 4 PRIMARIES (unlocked after wave 12) ──
+  {id:19,name:'Semi-Auto Rifle',mode:'SEMI',  damage:62,  mag:20,  reserve:80,  rate:0,  reload:2.4, spread:.005, pellets:1, bspeed:60, scopeFov:0,  recoil:.085, cockTime:0,    xSize:22,xGap:4,xThick:1,   dmgN:4,rateN:3,magN:3,rangeN:5,cat:'primary',tier:4,desc:'Roller-delayed · hard-hitting semi'},
+  {id:20,name:'Heavy SMG',      mode:'AUTO',  damage:28,  mag:50,  reserve:150, rate:13, reload:2.2, spread:.016, pellets:1, bspeed:50, scopeFov:0,  recoil:.04,  cockTime:0,    xSize:28,xGap:5,xThick:1,   dmgN:3,rateN:5,magN:5,rangeN:3,cat:'primary',tier:4,desc:'50-round top mag · compact powerhouse'},
+  {id:21,name:'Pro Semi Sniper',mode:'SEMI',  damage:110, mag:10,  reserve:30,  rate:0,  reload:3.0, spread:.0015,pellets:1, bspeed:95, scopeFov:22, recoil:.13,  cockTime:0,    xSize:16,xGap:3,xThick:1,   dmgN:5,rateN:2,magN:2,rangeN:5,cat:'primary',tier:4,desc:'Semi-auto precision · 10-round mag'},
+  // ── TIER 5 PRIMARIES (unlocked after wave 16) ──
+  {id:22,name:'Heavy Semi Sniper',mode:'SEMI', damage:200, mag:10,  reserve:20,  rate:0,  reload:3.8, spread:.0005,pellets:1, bspeed:120,scopeFov:18, recoil:.22,  cockTime:0,    xSize:14,xGap:2,xThick:1,   dmgN:5,rateN:2,magN:1,rangeN:5,cat:'primary',tier:5,desc:'.50 cal · devastating · semi-auto'},
+  {id:23,name:'Tactical Rifle',  mode:'AUTO',  damage:44,  mag:30,  reserve:150, rate:11, reload:2.0, spread:.009, pellets:1, bspeed:57, scopeFov:0,  recoil:.052, cockTime:0,    xSize:24,xGap:5,xThick:1,   dmgN:4,rateN:4,magN:4,rangeN:4,cat:'primary',tier:5,desc:'Compact · built-in optic · all-range'},
+];
+
+// ─── WEAPON SELECT UI ─────────────────────────────────────
+function drawWpnIcon(ctx,id){
+  ctx.clearRect(0,0,96,32);ctx.strokeStyle='rgba(255,210,150,.75)';ctx.lineWidth=1.4;ctx.lineCap='round';ctx.lineJoin='round';
+  const shapes={
+    0:()=>{ ctx.beginPath();ctx.moveTo(2,16);ctx.lineTo(60,16);ctx.lineTo(64,13);ctx.lineTo(82,13);ctx.stroke();ctx.beginPath();ctx.rect(18,13,20,6);ctx.stroke();ctx.beginPath();ctx.moveTo(24,19);ctx.lineTo(22,25);ctx.lineTo(28,25);ctx.lineTo(30,19);ctx.stroke();ctx.beginPath();ctx.moveTo(50,13);ctx.lineTo(50,11);ctx.lineTo(66,11);ctx.stroke();ctx.beginPath();ctx.moveTo(38,16);ctx.lineTo(38,12);ctx.stroke(); },
+    1:()=>{ ctx.beginPath();ctx.moveTo(4,16);ctx.lineTo(56,16);ctx.lineTo(60,13);ctx.lineTo(74,13);ctx.stroke();ctx.beginPath();ctx.rect(16,13,16,6);ctx.stroke();ctx.beginPath();ctx.moveTo(20,19);ctx.lineTo(18,25);ctx.lineTo(24,25);ctx.lineTo(26,19);ctx.stroke();ctx.beginPath();ctx.moveTo(52,10);ctx.lineTo(66,10);ctx.lineTo(66,16);ctx.lineTo(52,16);ctx.stroke();ctx.beginPath();ctx.moveTo(10,16);ctx.lineTo(10,20);ctx.lineTo(44,20);ctx.stroke(); },
+    2:()=>{ ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,15);ctx.lineTo(88,15);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.rect(12,12,24,6);ctx.stroke();ctx.beginPath();ctx.rect(8,18,22,6);ctx.stroke();ctx.beginPath();ctx.moveTo(4,16);ctx.lineTo(4,22);ctx.lineTo(8,22);ctx.stroke();ctx.beginPath();ctx.moveTo(44,15);ctx.lineTo(42,10);ctx.lineTo(38,10);ctx.stroke(); },
+    3:()=>{ ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,15);ctx.lineTo(78,15);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.rect(14,12,26,6);ctx.stroke();ctx.beginPath();ctx.moveTo(14,18);ctx.lineTo(14,20);ctx.lineTo(70,20);ctx.stroke();ctx.beginPath();ctx.moveTo(20,18);ctx.lineTo(18,26);ctx.lineTo(26,26);ctx.lineTo(28,18);ctx.stroke();ctx.beginPath();ctx.rect(56,13,22,4);ctx.stroke(); },
+    4:()=>{ ctx.beginPath();ctx.moveTo(2,16);ctx.lineTo(90,16);ctx.stroke();ctx.beginPath();ctx.rect(16,13,22,6);ctx.stroke();ctx.beginPath();ctx.rect(20,9,14,5);ctx.stroke();ctx.beginPath();ctx.moveTo(22,10);ctx.lineTo(22,13);ctx.moveTo(32,10);ctx.lineTo(32,13);ctx.stroke();ctx.beginPath();ctx.moveTo(20,19);ctx.lineTo(18,26);ctx.lineTo(26,26);ctx.lineTo(28,19);ctx.stroke();ctx.beginPath();ctx.moveTo(36,16);ctx.lineTo(40,11);ctx.stroke(); },
+    // Desert Eagle — chunky blocky slide, long barrel, angled grip
+    5:()=>{ ctx.beginPath();ctx.moveTo(6,15);ctx.lineTo(58,15);ctx.stroke();ctx.lineWidth=2.2;ctx.beginPath();ctx.rect(14,12,38,6);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(18,18);ctx.lineTo(15,28);ctx.lineTo(26,28);ctx.lineTo(28,18);ctx.stroke();ctx.beginPath();ctx.moveTo(48,13);ctx.lineTo(48,10);ctx.stroke();ctx.beginPath();ctx.moveTo(14,15);ctx.lineTo(14,18);ctx.lineTo(32,18);ctx.stroke(); },
+    // M9 Beretta — slimmer slide, longer grip, exposed hammer
+    6:()=>{ ctx.beginPath();ctx.moveTo(6,16);ctx.lineTo(60,16);ctx.stroke();ctx.lineWidth=1.6;ctx.beginPath();ctx.rect(16,13,36,5);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(20,18);ctx.lineTo(18,27);ctx.lineTo(28,27);ctx.lineTo(30,18);ctx.stroke();ctx.beginPath();ctx.moveTo(50,14);ctx.lineTo(50,11);ctx.stroke();ctx.beginPath();ctx.arc(52,14,2,0,Math.PI*2);ctx.stroke(); },
+    // USP .45 — distinctive boxy frame, short barrel, rail under
+    7:()=>{ ctx.beginPath();ctx.moveTo(8,16);ctx.lineTo(54,16);ctx.stroke();ctx.lineWidth=1.8;ctx.beginPath();ctx.rect(16,13,32,5);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(20,18);ctx.lineTo(17,27);ctx.lineTo(27,27);ctx.lineTo(30,18);ctx.stroke();ctx.beginPath();ctx.moveTo(16,18);ctx.lineTo(44,18);ctx.lineTo(44,20);ctx.lineTo(16,20);ctx.stroke();ctx.beginPath();ctx.moveTo(44,15);ctx.lineTo(44,11);ctx.stroke(); },
+    // Classic AR (AK47) — curved banana mag, wood stock, long barrel
+    8:()=>{ ctx.beginPath();ctx.moveTo(2,15);ctx.lineTo(82,15);ctx.stroke();ctx.beginPath();ctx.rect(16,12,22,6);ctx.stroke();ctx.beginPath();ctx.moveTo(22,18);ctx.lineTo(19,25);ctx.arc(22,22,4,Math.PI*.8,Math.PI*.2,true);ctx.lineTo(30,18);ctx.stroke();ctx.beginPath();ctx.rect(50,13,28,4);ctx.stroke();ctx.beginPath();ctx.moveTo(36,15);ctx.lineTo(36,11);ctx.stroke(); },
+    // Micro SMG (Skorpion) — tiny body, folding wire stock, short barrel
+    9:()=>{ ctx.beginPath();ctx.moveTo(4,16);ctx.lineTo(44,16);ctx.lineTo(48,13);ctx.lineTo(58,13);ctx.stroke();ctx.beginPath();ctx.rect(12,13,18,6);ctx.stroke();ctx.beginPath();ctx.moveTo(14,19);ctx.lineTo(13,26);ctx.lineTo(20,26);ctx.lineTo(21,19);ctx.stroke();ctx.beginPath();ctx.moveTo(56,13);ctx.lineTo(66,11);ctx.lineTo(70,13);ctx.stroke();// wire stock
+    ctx.beginPath();ctx.moveTo(16,13);ctx.lineTo(16,10);ctx.lineTo(28,10);ctx.stroke(); },
+    // Pro LMG (RPD) — drum mag, long barrel, carry handle
+    10:()=>{ ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,14);ctx.lineTo(88,14);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.rect(10,11,26,6);ctx.stroke();ctx.beginPath();ctx.arc(8,22,7,0,Math.PI*2);ctx.stroke();// drum
+    ctx.beginPath();ctx.moveTo(36,11);ctx.lineTo(34,7);ctx.lineTo(48,7);ctx.lineTo(46,11);ctx.stroke();// carry handle
+    ctx.beginPath();ctx.moveTo(4,14);ctx.lineTo(4,18);ctx.lineTo(8,18);ctx.stroke(); },
+    // Pump Mk2 — tactical pistol-grip shotgun
+    11:()=>{ ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,14);ctx.lineTo(80,14);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.rect(12,11,28,6);ctx.stroke();ctx.beginPath();ctx.moveTo(12,17);ctx.lineTo(12,19);ctx.lineTo(72,19);ctx.stroke();ctx.beginPath();ctx.moveTo(18,17);ctx.lineTo(15,26);ctx.lineTo(25,26);ctx.lineTo(27,17);ctx.stroke();ctx.beginPath();ctx.rect(60,12,16,4);ctx.stroke(); },
+    // Semi Sniper (M21)
+    12:()=>{ ctx.beginPath();ctx.moveTo(2,16);ctx.lineTo(88,16);ctx.stroke();ctx.beginPath();ctx.rect(16,13,24,6);ctx.stroke();ctx.beginPath();ctx.rect(18,8,18,6);ctx.stroke();ctx.beginPath();ctx.moveTo(19,9);ctx.lineTo(19,13);ctx.moveTo(30,9);ctx.lineTo(30,13);ctx.stroke();ctx.beginPath();ctx.moveTo(20,19);ctx.lineTo(18,26);ctx.lineTo(26,26);ctx.lineTo(28,19);ctx.stroke();ctx.beginPath();ctx.rect(60,13,24,5);ctx.stroke(); },
+    // Standard Rifle (M16 platform, full auto) — same look as Burst AR
+    13:()=>{ ctx.beginPath();ctx.moveTo(2,16);ctx.lineTo(60,16);ctx.lineTo(64,13);ctx.lineTo(82,13);ctx.stroke();ctx.beginPath();ctx.rect(18,13,20,6);ctx.stroke();ctx.beginPath();ctx.moveTo(24,19);ctx.lineTo(22,25);ctx.lineTo(28,25);ctx.lineTo(30,19);ctx.stroke();ctx.beginPath();ctx.moveTo(50,13);ctx.lineTo(50,11);ctx.lineTo(66,11);ctx.stroke();ctx.beginPath();ctx.moveTo(38,16);ctx.lineTo(38,12);ctx.stroke();// AUTO selector mark
+    ctx.beginPath();ctx.arc(72,13,2,0,Math.PI*2);ctx.fillStyle='rgba(255,210,150,.75)';ctx.fill(); },
+    // Mini Uzi — tiny, top-loading mag, wire stock
+    14:()=>{ ctx.beginPath();ctx.moveTo(4,16);ctx.lineTo(46,16);ctx.lineTo(50,13);ctx.lineTo(60,13);ctx.stroke();ctx.beginPath();ctx.rect(12,13,20,6);ctx.stroke();ctx.beginPath();ctx.moveTo(20,10);ctx.lineTo(20,13);ctx.moveTo(28,10);ctx.lineTo(28,13);ctx.stroke();// top mag
+    ctx.beginPath();ctx.moveTo(14,19);ctx.lineTo(13,27);ctx.lineTo(21,27);ctx.lineTo(22,19);ctx.stroke();ctx.beginPath();ctx.moveTo(54,13);ctx.lineTo(62,11);ctx.lineTo(66,13);ctx.stroke(); },
+    // Heavy LMG (M60) — very long, belt box, bipod legs, carry handle
+    15:()=>{ ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(2,14);ctx.lineTo(90,14);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.rect(10,11,28,6);ctx.stroke();ctx.beginPath();ctx.rect(62,12,20,5);ctx.stroke();// belt box
+    ctx.beginPath();ctx.moveTo(4,14);ctx.lineTo(4,20);ctx.lineTo(8,20);ctx.stroke();ctx.beginPath();ctx.moveTo(8,20);ctx.lineTo(10,24);ctx.stroke();// bipod leg
+    ctx.beginPath();ctx.moveTo(34,11);ctx.lineTo(32,7);ctx.lineTo(46,7);ctx.lineTo(44,11);ctx.stroke(); },
+    // Semi Shotgun (SPAS-12) — boxy receiver, hook stock, long barrel
+    16:()=>{ ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,14);ctx.lineTo(82,14);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.rect(10,11,30,6);ctx.stroke();ctx.beginPath();ctx.moveTo(10,17);ctx.lineTo(10,19);ctx.lineTo(74,19);ctx.stroke();ctx.beginPath();ctx.moveTo(16,17);ctx.lineTo(14,26);ctx.lineTo(24,26);ctx.lineTo(26,17);ctx.stroke();// hook stock shape
+    ctx.beginPath();ctx.moveTo(58,12);ctx.lineTo(58,8);ctx.lineTo(68,8);ctx.lineTo(68,12);ctx.stroke(); },
+    // R7000 Heavy Sniper — huge muzzle brake, massive scope, heavy stock
+    17:()=>{ ctx.beginPath();ctx.moveTo(2,16);ctx.lineTo(92,16);ctx.stroke();ctx.beginPath();ctx.rect(14,13,24,6);ctx.stroke();ctx.beginPath();ctx.rect(16,8,20,6);ctx.stroke();// big scope
+    ctx.beginPath();ctx.moveTo(16,9);ctx.lineTo(16,13);ctx.moveTo(28,9);ctx.lineTo(28,13);ctx.stroke();ctx.beginPath();ctx.moveTo(14,19);ctx.lineTo(12,27);ctx.lineTo(22,27);ctx.lineTo(24,19);ctx.stroke();ctx.beginPath();ctx.moveTo(88,15);ctx.lineTo(88,12);ctx.moveTo(86,15);ctx.lineTo(86,12);ctx.stroke();// muzzle brake ports
+    ctx.beginPath();ctx.rect(60,14,24,4);ctx.stroke(); },
+    // Cold 45 (1911) — clean lines, wood grip, spur hammer
+    18:()=>{ ctx.beginPath();ctx.moveTo(6,16);ctx.lineTo(52,16);ctx.stroke();ctx.lineWidth=1.7;ctx.beginPath();ctx.rect(14,13,30,5);ctx.stroke();ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(18,18);ctx.lineTo(16,27);ctx.lineTo(26,27);ctx.lineTo(28,18);ctx.stroke();ctx.beginPath();ctx.moveTo(40,14);ctx.lineTo(40,11);ctx.stroke();ctx.beginPath();ctx.moveTo(14,18);ctx.lineTo(40,18);ctx.lineTo(40,20);ctx.lineTo(14,20);ctx.stroke(); },
+    // G3 — straight mag, long barrel, rear sight drum, thumbhole-ish stock
+    19:()=>{ ctx.beginPath();ctx.moveTo(2,15);ctx.lineTo(86,15);ctx.stroke();ctx.beginPath();ctx.rect(16,12,26,6);ctx.stroke();ctx.beginPath();ctx.moveTo(24,18);ctx.lineTo(22,25);ctx.lineTo(30,25);ctx.lineTo(32,18);ctx.stroke();ctx.beginPath();ctx.rect(52,12,28,5);ctx.stroke();ctx.beginPath();ctx.arc(32,13,3,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(42,15);ctx.lineTo(42,11);ctx.stroke(); },
+    // P90 — bullpup box, horizontal top mag, short barrel
+    20:()=>{ ctx.beginPath();ctx.moveTo(4,15);ctx.lineTo(60,15);ctx.lineTo(64,12);ctx.lineTo(84,12);ctx.stroke();ctx.beginPath();ctx.rect(8,12,50,6);ctx.stroke();// body
+    ctx.beginPath();ctx.rect(6,10,52,3);ctx.stroke();// horizontal top mag
+    ctx.beginPath();ctx.moveTo(20,18);ctx.lineTo(18,26);ctx.lineTo(28,26);ctx.lineTo(30,18);ctx.stroke(); },
+    // Dragunov — long barrel, PSO scope, curved mag, thumbhole stock
+    21:()=>{ ctx.beginPath();ctx.moveTo(2,16);ctx.lineTo(90,16);ctx.stroke();ctx.beginPath();ctx.rect(14,13,24,6);ctx.stroke();ctx.beginPath();ctx.rect(16,8,20,5);ctx.stroke();// PSO scope
+    ctx.beginPath();ctx.moveTo(17,9);ctx.lineTo(17,13);ctx.moveTo(28,9);ctx.lineTo(28,13);ctx.stroke();ctx.beginPath();ctx.moveTo(20,19);ctx.lineTo(17,27);ctx.arc(21,24,5,Math.PI*.85,Math.PI*.15,true);ctx.lineTo(29,19);ctx.stroke();// curved mag
+    ctx.beginPath();ctx.rect(58,13,26,5);ctx.stroke();// thumbhole stock hint
+    },
+    // Barrett .50 cal — huge scope, muzzle brake, bipod legs
+    22:()=>{ ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(2,15);ctx.lineTo(90,15);ctx.stroke();ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.rect(12,12,26,6);ctx.stroke();// receiver
+    ctx.beginPath();ctx.rect(14,7,22,6);ctx.stroke();// large scope
+    ctx.beginPath();ctx.moveTo(14,8);ctx.lineTo(14,12);ctx.moveTo(26,8);ctx.lineTo(26,12);ctx.stroke();
+    ctx.beginPath();ctx.rect(83,13,7,4);ctx.stroke();// muzzle brake
+    ctx.beginPath();ctx.moveTo(84,13);ctx.lineTo(84,17);ctx.moveTo(87,13);ctx.lineTo(87,17);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(22,18);ctx.lineTo(20,26);ctx.lineTo(28,26);ctx.lineTo(30,18);ctx.stroke();// grip
+    ctx.beginPath();ctx.moveTo(50,15);ctx.lineTo(48,21);ctx.moveTo(55,15);ctx.lineTo(53,21);ctx.stroke(); },// bipod
+    // G36C — compact, carry handle+optic, curved mag, folding stock
+    23:()=>{ ctx.beginPath();ctx.moveTo(4,15);ctx.lineTo(72,15);ctx.stroke();
+    ctx.beginPath();ctx.rect(10,12,28,6);ctx.stroke();// body
+    ctx.beginPath();ctx.rect(14,8,20,5);ctx.stroke();// carry handle
+    ctx.beginPath();ctx.rect(16,9,8,4);ctx.fillStyle='rgba(255,210,150,.2)';ctx.fill();ctx.stroke();// optic lens
+    ctx.beginPath();ctx.moveTo(12,18);ctx.arc(18,22,5,Math.PI*1.1,Math.PI*.1,true);ctx.lineTo(28,18);ctx.stroke();// curved mag
+    ctx.beginPath();ctx.rect(56,13,16,4);ctx.stroke();// stock
+    ctx.beginPath();ctx.moveTo(56,15);ctx.lineTo(56,12);ctx.moveTo(60,15);ctx.lineTo(60,12);ctx.stroke(); },
+  };
+  shapes[id]&&shapes[id]();
+}
+function sbar(v,mx=5){return`<div class="wcbar"><div class="wcbf" style="width:${v/mx*100}%"></div></div>`;}
+
+const cards=document.getElementById('wpcards');
+const primaries=WEAPONS.filter(w=>w.cat==='primary'&&w.tier===1);
+const pistols=WEAPONS.filter(w=>w.cat==='pistol');
+
+// Dual selection state
+let selPrimary=-1, selPistol=-1;
+function updateDeployBtn(){
+  const ok=selPrimary>=0&&selPistol>=0;
+  document.getElementById('playbtn').classList.toggle('ready',ok);
+}
+function selWeapon(id){
+  const w=WEAPONS[id];
+  if(w.cat==='primary'){
+    selPrimary=id;
+    document.querySelectorAll('.wpcard[data-cat="primary"]').forEach(c=>c.classList.toggle('selected',+c.dataset.wid===id));
+  } else {
+    selPistol=id;
+    document.querySelectorAll('.wpcard[data-cat="pistol"]').forEach(c=>c.classList.toggle('selected',+c.dataset.wid===id));
+  }
+  updateDeployBtn();
+}
+
+function makeRow(list,label){
+  const wrap=document.createElement('div');wrap.style.cssText='width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;';
+  const sep=document.createElement('div');sep.style.cssText='width:100%;display:flex;align-items:center;gap:10px;';
+  sep.innerHTML=`<div style="flex:1;height:1px;background:rgba(255,200,80,.12)"></div><div style="font-size:8px;letter-spacing:4px;color:rgba(255,200,80,.35);text-transform:uppercase;white-space:nowrap">${label}</div><div style="flex:1;height:1px;background:rgba(255,200,80,.12)"></div>`;
+  wrap.appendChild(sep);
+  const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;';
+  list.forEach(w=>{
+    const d=document.createElement('div');d.className='wpcard';d.dataset.wid=w.id;d.dataset.cat=w.cat;
+    d.innerHTML=`<div class="wcheck">✓</div><div class="wico"><canvas width="96" height="32" id="wico${w.id}"></canvas></div><div class="wcname">${w.name}</div><div class="wcmode">${w.mode}</div><div class="wstat"><span>DMG</span>${sbar(w.dmgN)}</div><div class="wstat"><span>RPM</span>${sbar(w.rateN)}</div><div class="wstat"><span>MAG</span>${sbar(w.magN)}</div><div class="wstat"><span>RNG</span>${sbar(w.rangeN)}</div><div class="wcdesc">${w.desc}</div>`;
+    d.addEventListener('click',()=>selWeapon(w.id));
+    row.appendChild(d);
+    requestAnimationFrame(()=>{const ico=document.getElementById('wico'+w.id);if(ico)drawWpnIcon(ico.getContext('2d'),w.id);});
+  });
+  wrap.appendChild(row);
+  cards.appendChild(wrap);
+}
+makeRow(primaries,'Primary');
+makeRow(pistols,'Sidearm');
+
+// ─── ACTIVE GUN STATE ─────────────────────────────────────
+let gunG=null;
+const muzzleLight=new THREE.PointLight(0xff9933,0,2.5,2);
+let curWid=0;
+// Dual loadout: slot 0 = primary, slot 1 = pistol
+let loadout=[0,5];
+let activeSlot=0;
+// Per-slot ammo [mag, reserve]
+let slotAmmo=[[30,90],[15,90]];
+// Direct accessors — no defineProperty tricks
+function getMag(){return slotAmmo[activeSlot][0];}
+function getRes(){return slotAmmo[activeSlot][1];}
+function setMag(v){slotAmmo[activeSlot][0]=v;}
+function setRes(v){slotAmmo[activeSlot][1]=v;}
+
+// ─── CROSSHAIR ────────────────────────────────────────────
+function buildCrosshair(w){
+  const xh=document.getElementById('xhair');
+  xh.innerHTML='';
+  // Size scales with spread — sniper tiny, shotgun wide
+  const spread=w.spread||0.01;
+  const s=Math.round(Math.min(52, Math.max(14, spread*600+14)));
+  const g=Math.round(s*0.22);
+  const t=w.pellets>1?2:1.5; // shotgun gets thicker lines
+  xh.style.cssText=`position:fixed;top:50%;left:50%;margin-left:${-s/2}px;margin-top:${-s/2}px;width:${s}px;height:${s}px;pointer-events:none;z-index:10;`;
+  const lines=[
+    `width:${t}px;height:${s/2-g}px;left:50%;top:0;transform:translateX(-50%);`,
+    `width:${t}px;height:${s/2-g}px;left:50%;bottom:0;transform:translateX(-50%);`,
+    `height:${t}px;width:${s/2-g}px;top:50%;left:0;transform:translateY(-50%);`,
+    `height:${t}px;width:${s/2-g}px;top:50%;right:0;transform:translateY(-50%);`,
+  ];
+  lines.forEach(css=>{const el=document.createElement('div');el.className='xl';el.style.cssText=css;xh.appendChild(el);});
+  const dot=document.createElement('div');dot.className='dot';
+  dot.style.cssText='width:2px;height:2px;top:50%;left:50%;transform:translate(-50%,-50%);';
+  xh.appendChild(dot);
+}
+
+// ─── ADS / IRON SIGHTS / SCOPE ────────────────────────────
+let adsActive=false;
+// ADS gun position (centered, pushed forward toward camera center)
+const ADS_POS={
+  0: [0,-.14,-.36],  // Burst AR
+  1: [0,-.14,-.3 ],  // SMG
+  2: [0,-.16,-.4 ],  // LMG
+  3: [0,-.14,-.34],  // Pump Shotgun
+  4: [0,-.14,-.38],  // Bolt Sniper
+  5: [0,-.13,-.26],  // Heavy Pistol
+  6: [0,-.12,-.24],  // Standard Pistol
+  7: [0,-.12,-.25],  // Pro Pistol
+  8: [0,-.14,-.36],  // Classic AR
+  9: [0,-.13,-.26],  // Micro SMG
+  10:[0,-.16,-.42],  // Pro LMG
+  11:[0,-.14,-.34],  // Pump Mk2
+  12:[0,-.14,-.38],  // Semi Sniper
+  13:[0,-.14,-.36],  // Standard Rifle
+  14:[0,-.13,-.24],  // Mini Uzi
+  15:[0,-.16,-.44],  // Heavy LMG
+  16:[0,-.14,-.34],  // Semi Shotgun
+  17:[0,-.14,-.4 ],  // R7000
+  18:[0,-.12,-.24],  // Cold 45
+  19:[0,-.14,-.36],  // G3
+  20:[0,-.14,-.28],  // P90
+  21:[0,-.14,-.4 ],  // Dragunov
+  22:[0,-.16,-.44],  // Barrett .50
+  23:[0,-.14,-.34],  // G36C
+};
+
+// Draw iron sights for a given weapon onto a canvas context
+function drawIronSights(ctx, w, cw, ch){
+  ctx.clearRect(0,0,cw,ch);
+  const cx=cw/2, cy=ch/2;
+  // Iron sight style per weapon family
+  const id=w.id;
+  ctx.strokeStyle='rgba(20,20,20,0.92)';
+  ctx.fillStyle='rgba(20,20,20,0.92)';
+  ctx.lineWidth=2;
+  ctx.lineCap='round';
+
+  if(id===4||id===12){
+    // Sniper — no iron sight overlay, scope handles it
+    return;
+  }
+
+  if(id===0||id===8){
+    // AR / Classic AR: A2 / AK post-and-notch
+    // Rear aperture ring
+    ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);ctx.strokeStyle='rgba(10,10,10,.85)';ctx.lineWidth=10;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);ctx.strokeStyle='rgba(80,80,80,.3)';ctx.lineWidth=1;ctx.stroke();
+    // Rear sight housing — flat wings
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-60,cy+8,50,18);  // left wing
+    ctx.fillRect(cx+10,cy+8,50,18);  // right wing
+    ctx.fillRect(cx-8,cy+26,16,12);  // bottom bridge
+    // Front post (fine blade)
+    ctx.fillStyle='rgba(15,15,15,.95)';
+    ctx.fillRect(cx-1.5,cy-44,3,28); // post
+    ctx.fillRect(cx-10,cy-18,20,6);  // post base/hood
+  } else if(id===1){
+    // SMG MP5: diopter rear + hooded front post
+    ctx.beginPath();ctx.arc(cx,cy,14,0,Math.PI*2);ctx.strokeStyle='rgba(10,10,10,.9)';ctx.lineWidth=12;ctx.stroke();
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-55,cy+2,40,16);
+    ctx.fillRect(cx+15,cy+2,40,16);
+    ctx.fillRect(cx-7,cy+18,14,8);
+    // Front post
+    ctx.fillRect(cx-1.5,cy-38,3,24);
+    ctx.fillRect(cx-9,cy-16,18,5);
+  } else if(id===2||id===10){
+    // LMG: open U-notch rear
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-50,cy+2,100,20); // rear bar
+    ctx.clearRect(cx-6,cy+2,12,20);  // U notch
+    ctx.fillRect(cx-50,cy-6,19,10);  // left sight wing
+    ctx.fillRect(cx+31,cy-6,19,10);  // right sight wing
+    // Front post
+    ctx.fillRect(cx-2,cy-40,4,28);
+    ctx.fillRect(cx-11,cy-14,22,5);
+  } else if(id===3||id===11){
+    // Shotgun: large bead front, wide U rear
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-48,cy+4,96,16);
+    ctx.clearRect(cx-9,cy+4,18,16);
+    // Front bead (circle)
+    ctx.beginPath();ctx.arc(cx,cy-36,4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy-36,5,0,Math.PI*2);ctx.strokeStyle='rgba(60,60,60,.5)';ctx.lineWidth=1;ctx.stroke();
+  } else if(id===5){
+    // Heavy Pistol: 3-dot sights
+    ctx.fillStyle='rgba(10,10,10,.92)';
+    // Rear sight blade with notch
+    ctx.fillRect(cx-30,cy+6,60,14);
+    ctx.clearRect(cx-5,cy+6,10,14);
+    // Rear two dots
+    ctx.beginPath();ctx.arc(cx-18,cy+13,3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill();
+    ctx.beginPath();ctx.arc(cx+18,cy+13,3,0,Math.PI*2);ctx.fill();
+    // Front dot
+    ctx.beginPath();ctx.arc(cx,cy-30,3.5,0,Math.PI*2);ctx.fill();
+    // Front sight blade
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-5,cy-40,10,12);
+  } else if(id===6){
+    // Standard Pistol: 3-dot
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-28,cy+8,56,12);
+    ctx.clearRect(cx-4.5,cy+8,9,12);
+    ctx.beginPath();ctx.arc(cx-16,cy+14,2.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill();
+    ctx.beginPath();ctx.arc(cx+16,cy+14,2.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy-28,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-4,cy-36,8,10);
+  } else if(id===7){
+    // Pro Pistol USP: 3-dot with wider spacing
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-32,cy+6,64,14);
+    ctx.clearRect(cx-5,cy+6,10,14);
+    ctx.beginPath();ctx.arc(cx-20,cy+13,3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.85)';ctx.fill();
+    ctx.beginPath();ctx.arc(cx+20,cy+13,3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy-32,3.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.fillRect(cx-5,cy-42,10,12);
+  } else if(id===9){
+    // Micro SMG: simple V-notch rear + post
+    ctx.fillStyle='rgba(10,10,10,.9)';
+    ctx.beginPath();ctx.moveTo(cx-30,cy+4);ctx.lineTo(cx-8,cy+4);ctx.lineTo(cx,cy+16);ctx.lineTo(cx+8,cy+4);ctx.lineTo(cx+30,cy+4);ctx.lineTo(cx+30,cy+18);ctx.lineTo(cx-30,cy+18);ctx.closePath();ctx.fill();
+    ctx.fillRect(cx-2,cy-32,4,22);
+  }
+
+  // Universal: subtle black vignette bars top/bottom to frame the sight picture
+  const grad=ctx.createLinearGradient(0,0,0,cy-50);
+  grad.addColorStop(0,'rgba(0,0,0,0.55)');grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,cw,cy-50);
+  const grad2=ctx.createLinearGradient(0,ch,0,cy+50);
+  grad2.addColorStop(0,'rgba(0,0,0,0.55)');grad2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad2;ctx.fillRect(0,cy+50,cw,ch);
+}
+
+// Draw scope overlay for snipers
+function drawScope(ctx, cw, ch){
+  ctx.clearRect(0,0,cw,ch);
+  const cx=cw/2, cy=ch/2;
+  const r=Math.min(cw,ch)*0.36;
+
+  // Full black background
+  ctx.fillStyle='#000';ctx.fillRect(0,0,cw,ch);
+
+  // Clear the scope circle
+  ctx.save();
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
+  ctx.clearRect(0,0,cw,ch);
+
+  // Subtle green-tinted scope glass tint
+  ctx.fillStyle='rgba(10,20,10,0.18)';ctx.fillRect(0,0,cw,ch);
+
+  // Reticle — mil-dot crosshair
+  ctx.strokeStyle='rgba(0,0,0,0.9)';ctx.lineWidth=1.2;
+  // Main cross lines
+  ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx-r*0.18,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+r*0.18,cy);ctx.lineTo(cx+r,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy-r*0.18);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy+r*0.18);ctx.lineTo(cx,cy+r);ctx.stroke();
+  // Center dot
+  ctx.beginPath();ctx.arc(cx,cy,2.5,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.9)';ctx.fill();
+  // Mil dots along horizontal
+  [-0.55,-0.4,-0.25,0.25,0.4,0.55].forEach(f=>{
+    ctx.beginPath();ctx.arc(cx+f*r,cy,2,0,Math.PI*2);ctx.fill();
+  });
+  // Mil dots along vertical
+  [-0.55,-0.4,-0.25,0.25,0.4,0.55].forEach(f=>{
+    ctx.beginPath();ctx.arc(cx,cy+f*r,2,0,Math.PI*2);ctx.fill();
+  });
+  // Ranging stadia lines (horizontal, bottom half)
+  for(let i=1;i<=3;i++){
+    const ly=cy+r*(0.15*i);const lw=r*(0.12-i*0.02);
+    ctx.beginPath();ctx.moveTo(cx-lw,ly);ctx.lineTo(cx+lw,ly);ctx.stroke();
+  }
+  ctx.restore();
+
+  // Scope ring / lens edge
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  const ringGrad=ctx.createRadialGradient(cx,cy,r*0.9,cx,cy,r*1.05);
+  ringGrad.addColorStop(0,'rgba(40,40,40,0)');
+  ringGrad.addColorStop(0.5,'rgba(20,20,20,1)');
+  ringGrad.addColorStop(1,'rgba(0,0,0,1)');
+  ctx.strokeStyle=ringGrad;ctx.lineWidth=r*0.18;ctx.stroke();
+
+  // Inner vignette
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  const vig=ctx.createRadialGradient(cx,cy,r*0.5,cx,cy,r);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,0.35)');
+  ctx.fillStyle=vig;ctx.fill();
+
+  // Lens reflection arc
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
+  ctx.beginPath();ctx.arc(cx-r*0.3,cy-r*0.3,r*0.55,0,Math.PI*2);
+  const ref=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,0,cx-r*0.3,cy-r*0.3,r*0.55);
+  ref.addColorStop(0,'rgba(255,255,255,0.04)');ref.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=ref;ctx.fill();
+  ctx.restore();
+}
+
+function isSniper(wid){return wid===4||wid===12;}
+
+function enterADS(){
+  if(adsActive||!gunG)return;
+  adsActive=true;
+  const w=WEAPONS[curWid];
+  const[ox,oy,oz]=GUN_POS[curWid];
+  const[ax,ay,az]=ADS_POS[curWid]||[0,oy,oz];
+  // Animate gun to center
+  gsapADS(gunG,ax,ay,az,0.12);
+  // Hide regular crosshair
+  document.getElementById('xhair').style.display='none';
+
+  if(isSniper(curWid)){
+    // Full scope overlay
+    const so=document.getElementById('scopeOverlay');
+    const sc=document.getElementById('scopeCanvas');
+    const sz=Math.min(window.innerWidth,window.innerHeight)*1.0;
+    sc.width=window.innerWidth;sc.height=window.innerHeight;
+    drawScope(sc.getContext('2d'),sc.width,sc.height);
+    so.style.display='block';
+    camera.fov=isSniper(curWid)?24:72;
+  } else {
+    // Iron sights overlay
+    const ic=document.getElementById('ironCanvas');
+    ic.width=window.innerWidth;ic.height=window.innerHeight;
+    drawIronSights(ic.getContext('2d'),w,ic.width,ic.height);
+    document.getElementById('adsOverlay').style.display='block';
+    camera.fov=58; // slight zoom for all ADS
+  }
+  camera.updateProjectionMatrix();
+}
+
+function exitADS(){
+  if(!adsActive)return;
+  adsActive=false;
+  const[ox,oy,oz]=GUN_POS[curWid];
+  gsapADS(gunG,ox,oy,oz,0.1);
+  document.getElementById('xhair').style.display='block';
+  document.getElementById('adsOverlay').style.display='none';
+  document.getElementById('scopeOverlay').style.display='none';
+  camera.fov=72;camera.updateProjectionMatrix();
+}
+
+// Simple lerp-based gun position animator (no external lib needed)
+let _adsTarget=null;
+function gsapADS(g,tx,ty,tz,spd){_adsTarget={tx,ty,tz,spd};}
+function updateADSLerp(dt){
+  if(!_adsTarget||!gunG)return;
+  const t=_adsTarget;
+  gunG.position.x+=(t.tx-gunG.position.x)*Math.min(1,dt/t.spd);
+  gunG.position.y+=(t.ty-gunG.position.y)*Math.min(1,dt/t.spd);
+  gunG.position.z+=(t.tz-gunG.position.z)*Math.min(1,dt/t.spd);
+  if(Math.abs(gunG.position.x-t.tx)<0.001&&Math.abs(gunG.position.z-t.tz)<0.001)_adsTarget=null;
+}
+
+function toggleScope(){
+  if(adsActive)exitADS(); else enterADS();
+}
+
+// adsActive is the authoritative ADS flag; scoped is kept as read-only alias below
+
+function equip(wid){
+  curWid=wid;
+  if(gunG)camera.remove(gunG);
+  gunG=GUN_BUILDERS[wid]();
+  muzzleLight.position.set(0,.035,-.9);
+  gunG.add(muzzleLight);
+  const[ox,oy,oz]=GUN_POS[wid];
+  gunG.position.set(ox,oy,oz);
+  camera.add(gunG);
+  document.getElementById('wnamelbl').textContent=WEAPONS[wid].name+' · '+WEAPONS[wid].mode;
+  buildCrosshair(WEAPONS[wid]);
+  // Always make crosshair visible when equipping (unless in ADS)
+  if(!adsActive)document.getElementById('xhair').style.display='block';
+  updateAmmoHUD();
+}
+
+function swapWeapon(){
+  if(adsActive)exitADS();
+  if(P.reloading){
+    // Cancel reload: remove mag mesh, reset state without giving ammo back
+    if(reloadAnim&&reloadAnim.magMesh)camera.remove(reloadAnim.magMesh);
+    reloadAnim=null; P.reloading=false;
+  }
+  if(scoped){toggleScope();}
+  cocking=false;cockAnim=null;
+  activeSlot=activeSlot===0?1:0;
+  curWid=loadout[activeSlot];
+  equip(curWid);
+}
+
+// ─── RELOAD ANIMATION ─────────────────────────────────────
+// Each weapon gets a reload animation defined as keyframes:
+// t=0..1 normalised time, returns {gunOffY, gunOffZ, gunRX, magOffY, magVis}
+// Phases:
+//   0.0-0.2  gun tilts down / mag ejects (drops)
+//   0.2-0.5  new mag travels up into well
+//   0.5-0.7  mag seats, charging handle racked
+//   0.7-1.0  gun returns to rest
+
+const RELOAD_ANIM = {
+  // mag-fed weapons (M16, MP5, M249, R700)
+  mag: (t)=>{
+    let gunY=0,gunZ=0,gunRX=0,magY=0,magVis=true,chY=0;
+    if(t<0.18){// tilt gun down, mag falls
+      const p=t/0.18;
+      gunY=-0.12*p; gunZ=0.06*p; gunRX=0.22*p;
+      magY=-0.25*p; // old mag drops
+    } else if(t<0.22){// old mag gone
+      magVis=false; magY=-0.25;
+      gunY=-0.12; gunZ=0.06; gunRX=0.22;
+    } else if(t<0.55){// new mag comes up
+      const p=(t-0.22)/0.33;
+      magVis=true; magY=-0.25+0.25*easeOut(p);
+      gunY=-0.12; gunZ=0.06; gunRX=0.22;
+    } else if(t<0.68){// mag seats, charging handle racks
+      const p=(t-0.55)/0.13;
+      magVis=true; magY=0;
+      gunY=-0.12+0.12*easeOut(p); gunZ=0.06-0.06*easeOut(p); gunRX=0.22-0.22*easeOut(p);
+      chY=Math.sin(p*Math.PI)*0.04; // charging handle pulls back and returns
+    } else {// gun returns to rest
+      const p=(t-0.68)/0.32;
+      gunY=0; gunZ=0; gunRX=0; magVis=true; magY=0;
+    }
+    return{gunY,gunZ,gunRX,magY,magVis,chY};
+  },
+  // Pump shotgun — individual shell loading
+  pump: (t)=>{
+    // t: 0-0.15 tilt gun, 0.15-0.85 load shells (repeated cycle), 0.85-1 restore
+    let gunY=0,gunZ=0,gunRX=0;
+    if(t<0.15){const p=t/0.15;gunY=-0.1*p;gunZ=0.05*p;gunRX=0.3*p;}
+    else if(t<0.85){gunY=-0.1;gunZ=0.05;gunRX=0.3;}
+    else{const p=(t-0.85)/0.15;gunY=-0.1+0.1*p;gunZ=0.05-0.05*p;gunRX=0.3-0.3*p;}
+    // forestock pump oscillation (simulating loading shells)
+    const shells=Math.floor((t-0.15)/0.12);
+    const pumpt=(t-0.15)%0.12/0.12;
+    const pumpZ=t>0.15&&t<0.85?Math.sin(pumpt*Math.PI)*0.04:0;
+    return{gunY,gunZ,gunRX,magY:0,magVis:false,chY:0,pumpZ};
+  },
+};
+function easeOut(t){return 1-(1-t)*(1-t);}
+
+let reloadAnim=null;
+// reloadAnim = { t, dur, phase, magMesh, pumpRef }
+
+// Create a floating "new magazine" mesh that animates into the gun
+function createMagMesh(wid){
+  const g=new THREE.Group();
+  const blk=gMat(0x1a1c1e,.4,.82);
+  if(wid===0){const b=bx(.046,.11,.05,blk);g.add(b);const bot=bx(.042,.018,.044,blk);bot.position.set(0,-.064,-.006);bot.rotation.x=.04;g.add(bot);}
+  else if(wid===1){const b=bx(.042,.092,.044,blk);g.add(b);const c=bx(.04,.03,.04,blk);c.position.set(0,-.06,.006);c.rotation.x=.12;g.add(c);}
+  else if(wid===2){const b=bx(.075,.09,.13,gMat(0x2a2e22,.7,.1));g.add(b);}
+  else if(wid===4){const b=bx(.05,.06,.04,blk);g.add(b);}
+  else if(wid===8){// Classic AR (AK) — curved banana mag
+    const b=bx(.052,.1,.052,blk);g.add(b);
+    const c=bx(.048,.04,.048,blk);c.position.set(0,-.065,.012);c.rotation.x=.12;g.add(c);
+  }
+  else if(wid===9){// Micro SMG — tiny compact mag
+    const b=bx(.038,.08,.036,blk);g.add(b);
+  }
+  else if(wid===10){// Pro LMG — drum
+    const drum=new THREE.Mesh(new THREE.CylinderGeometry(.072,.072,.048,12),gMat(0x2a2a2a,.5,.3));drum.rotation.z=Math.PI/2;g.add(drum);
+  }
+  else if(wid===12){// Semi Sniper — 20-rd box
+    const b=bx(.05,.1,.05,blk);g.add(b);
+  }
+  else if(wid===13){// G3 — straight 20-rd mag
+    const b=bx(.05,.1,.05,blk);g.add(b);
+  }
+  else if(wid===14){// Mini Uzi — compact mag
+    const b=bx(.042,.088,.04,blk);g.add(b);
+  }
+  else if(wid===15){// Heavy LMG — belt box
+    const b=bx(.052,.08,.12,gMat(0x2a2e22,.7,.1));g.add(b);
+  }
+  else if(wid===17){// R7000 — 5-rd box
+    const b=bx(.056,.07,.046,blk);g.add(b);
+  }
+  else if(wid===18){// Cold 45 — 1911 mag
+    const b=bx(.042,.09,.04,blk);g.add(b);
+  }
+  else if(wid===19){// G3 — straight 20-rd
+    const b=bx(.042,.1,.05,blk);g.add(b);
+  }
+  else if(wid===20){// P90 — horizontal top mag (drop from above)
+    const b=bx(.3,.022,.07,gMat(0x2a2c30,.5,.3));g.add(b);
+  }
+  else if(wid===21){// Dragunov — curved 10-rd
+    const b=bx(.046,.08,.048,blk);g.add(b);
+    const c=bx(.042,.03,.044,blk);c.position.set(0,-.055,.01);c.rotation.x=.08;g.add(c);
+  }
+  else if(wid===22){// Barrett — 10-rd box mag
+    const b=bx(.06,.1,.055,blk);g.add(b);
+  }
+  else if(wid===23){// G36C — 30-rd curved mag
+    const b=bx(.046,.11,.05,blk);g.add(b);
+    const c=bx(.044,.02,.046,blk);c.position.set(0,-.066,.008);c.rotation.x=.08;g.add(c);
+  }
+  else if(wid===6){const b=bx(.042,.1,.042,blk);g.add(b);}  // M9 — slim double-stack
+  else if(wid===7){const b=bx(.044,.09,.044,blk);g.add(b);}  // USP — standard
+  return g;
+}
+
+// ─── PLAYER ───────────────────────────────────────────────
+const P={pos:new THREE.Vector3(0,1.75,0),yaw:0,pitch:0,hp:100,maxHp:100,reloading:false,reloadTimer:0,reloadDuration:2,score:0,alive:true,stepT:0};
+let scoped=false,burstCount=0,burstTimer=0,fireTimer=0,mouseHeld=false;
+// ammo now stored in slotAmmo[activeSlot][0/1] — accessed via getMag()/getRes()/setMag()/setRes()
+// Cocking state (pump shotgun / bolt sniper must cock after each shot)
+let cocking=false, cockTimer=0, cockDuration=0;
+// cockAnim: animates the pump slide or bolt handle
+let cockAnim=null; // {t, type:'pump'|'bolt'}
+
+// ─── ENEMIES ──────────────────────────────────────────────
+const enemies=[];
+let wave=1,waveLeft=0,waveSpawned=0,waveActive=false,waveCool=0,upgradeShown=false;
+const EM={
+  suit: new THREE.MeshStandardMaterial({color:0x263040,roughness:0.75,metalness:0.15}),
+  armor:new THREE.MeshStandardMaterial({color:0x1a2030,roughness:0.4,metalness:0.6}),
+  visor:new THREE.MeshStandardMaterial({color:0xff2200,roughness:0.1,metalness:0.8,emissive:0xff1100,emissiveIntensity:0.6}),
+  boot: new THREE.MeshStandardMaterial({color:0x0e1014,roughness:0.9,metalness:0.1}),
+  skin: new THREE.MeshStandardMaterial({color:0x38291f,roughness:0.85,metalness:0.0}),
+  egun: new THREE.MeshStandardMaterial({color:0x111418,roughness:0.35,metalness:0.9}),
+};
+const EG={torso:new THREE.BoxGeometry(.62,.72,.33),chest:new THREE.BoxGeometry(.52,.5,.09),head:new THREE.BoxGeometry(.4,.42,.4),helmet:new THREE.BoxGeometry(.43,.23,.43),visor:new THREE.BoxGeometry(.32,.085,.04),neck:new THREE.CylinderGeometry(.095,.095,.1,6),shld:new THREE.BoxGeometry(.19,.19,.19),arm:new THREE.BoxGeometry(.15,.52,.15),hand:new THREE.BoxGeometry(.12,.14,.12),thigh:new THREE.BoxGeometry(.21,.48,.21),shin:new THREE.BoxGeometry(.17,.45,.17),boot:new THREE.BoxGeometry(.18,.1,.26),egun:new THREE.BoxGeometry(.05,.05,.36),hbBg:new THREE.PlaneGeometry(.88,.065),hbFill:new THREE.PlaneGeometry(.88,.065)};
+const HBG=new THREE.MeshBasicMaterial({color:0x2a0000,side:THREE.DoubleSide,depthWrite:false});
+const HBF=new THREE.MeshBasicMaterial({color:0xff2222,side:THREE.DoubleSide,depthWrite:false});
+function mkEnemy(x,z){
+  const g=new THREE.Group();
+  const ea=(geo,mat,px,py,pz)=>{const m=new THREE.Mesh(geo,mat);m.position.set(px,py,pz);m.castShadow=true;g.add(m);};
+  ea(EG.torso,EM.suit,0,1.18,0);ea(EG.chest,EM.armor,0,1.18,.21);ea(EG.head,EM.suit,0,1.74,0);ea(EG.helmet,EM.armor,0,1.87,0);ea(EG.visor,EM.visor,0,1.71,.21);ea(EG.neck,EM.suit,0,1.54,0);
+  [-0.36,.36].forEach(sx=>{ea(EG.shld,EM.armor,sx,1.36,0);ea(EG.arm,EM.suit,sx,1.02,0);ea(EG.hand,EM.skin,sx,.73,0);});
+  [-0.15,.15].forEach(lx=>{ea(EG.thigh,EM.suit,lx,.62,0);ea(EG.shin,EM.suit,lx,.18,0);ea(EG.boot,EM.boot,lx,.05,.03);});
+  ea(EG.egun,EM.egun,.27,.75,-.18);
+  const hbBg=new THREE.Mesh(EG.hbBg,HBG);hbBg.position.set(0,2.32,0);
+  const hbFill=new THREE.Mesh(EG.hbFill,HBF);hbFill.position.set(0,2.32,.01);
+  g.add(hbBg,hbFill);g.position.set(x,0,z);scene.add(g);
+  const maxHp=12+wave*3;
+  return{group:g,hbFill,hp:maxHp,maxHp,shootT:4.0+Math.random()*3.5,bobT:Math.random()*Math.PI*2,alive:true,speed:0.8+wave*.05};
+}
+function spawnWave(){
+  const n=3+wave*2;waveLeft=n;waveSpawned=0;waveActive=true;showAnn('Wave '+wave);
+  for(let i=0;i<n;i++)setTimeout(()=>{const a=Math.random()*Math.PI*2,d=22+Math.random()*14;enemies.push(mkEnemy(Math.max(-ARENA+2,Math.min(ARENA-2,Math.cos(a)*d)),Math.max(-ARENA+2,Math.min(ARENA-2,Math.sin(a)*d))));waveSpawned++;},i*500);
+}
+
+// ─── BULLETS & PARTICLES ──────────────────────────────────
+const bullets=[],eBullets=[];
+const BGEO=new THREE.SphereGeometry(.045,5,4);
+const PBMAT=new THREE.MeshBasicMaterial({color:0xffcc66});
+const EBMAT=new THREE.MeshBasicMaterial({color:0xff3311});
+const POOL=80,pPool=[];
+const PGEO=new THREE.SphereGeometry(.05,3,3);
+const PBLD=new THREE.MeshBasicMaterial({color:0x991100});
+const PSRK=new THREE.MeshBasicMaterial({color:0xff8800});
+for(let i=0;i<POOL;i++){const m=new THREE.Mesh(PGEO,PBLD);m.visible=false;scene.add(m);pPool.push({mesh:m,vel:new THREE.Vector3(),life:0,maxLife:0,active:false});}
+let _pIdx=0;
+function getP(){
+  // Round-robin: scan forward from last position, wrap around
+  for(let n=0;n<POOL;n++){const p=pPool[_pIdx=(_pIdx+1)%POOL];if(!p.active)return p;}
+  return pPool[_pIdx]; // forcibly reuse oldest
+}
+function spawnFX(pos,blood,cnt){for(let i=0;i<cnt;i++){const p=getP();p.mesh.material=blood?PBLD:PSRK;p.mesh.position.copy(pos);p.mesh.visible=true;p.vel.set((Math.random()-.5)*8,Math.random()*6+1,(Math.random()-.5)*8);p.life=0;p.maxLife=blood?.4+Math.random()*.3:.18+Math.random()*.12;p.active=true;}}
+
+// ─── INPUT ────────────────────────────────────────────────
+const keys={};
+let running=false,locked=false;
+
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(!running)return;
+  if(e.code==='KeyR'&&!P.reloading&&getMag()<WEAPONS[curWid].mag&&P.alive)startReload();
+  if(e.code==='KeyQ'&&P.alive&&!P.reloading)swapWeapon();
+  if(e.code==='Space'&&P.alive&&airstrikeArmed&&!airstrikeActive){e.preventDefault();triggerAirstrike();}
+});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+document.addEventListener('mousemove',e=>{if(!locked||!running)return;P.yaw-=e.movementX*.0018;P.pitch-=e.movementY*.0018;P.pitch=Math.max(-1.1,Math.min(1.1,P.pitch));});
+document.addEventListener('mousedown',e=>{
+  if(!running)return;
+  if(!locked){canvas.requestPointerLock();return;}
+  if(e.button===0){mouseHeld=true;tryShoot();}
+  if(e.button===2)toggleScope();
+});
+document.addEventListener('mouseup',e=>{if(e.button===0)mouseHeld=false;});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas;});
+
+// ─── SHOOTING ─────────────────────────────────────────────
+function fireBullet(){
+  const wRaw=WEAPONS[curWid];
+  const w={...wRaw};
+  if(perks.damageBoost)w.damage=Math.round(w.damage*1.5);
+  if(attachment==='laser')w.spread=w.spread*0.55;
+  if(attachment==='suppressor'){w.recoil=w.recoil*0.65;}
+  if(!getMag()||P.reloading||cocking||!P.alive)return false;
+  setMag(getMag()-1);updateAmmoHUD();
+  if(attachment!=='suppressor'){muzzleLight.intensity=6;setTimeout(()=>muzzleLight.intensity=0,55);}
+  if(gunG){const[,,oz]=GUN_POS[curWid];gunG.position.z+=w.recoil;setTimeout(()=>{if(gunG)gunG.position.z=oz;},75);}
+  for(let p=0;p<w.pellets;p++){
+    const dir=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(P.pitch,P.yaw,0,'YXZ')).normalize();
+    const sp=w.spread*(scoped?.2:1);
+    dir.x+=(Math.random()-.5)*sp*2;dir.y+=(Math.random()-.5)*sp*2;dir.normalize();
+    const m=new THREE.Mesh(BGEO,PBMAT);m.position.copy(P.pos).addScaledVector(dir,.6);
+    scene.add(m);bullets.push({mesh:m,dir,life:0,dmg:w.damage,spd:w.bspeed});
+  }
+  if(w.cockTime>0&&getMag()>0){
+    cocking=true;cockTimer=0;cockDuration=w.cockTime;
+    cockAnim={t:0,type:w.mode==='PUMP'?'pump':'bolt'};
+  }
+  if(getMag()===0)startReload();
+  return true;
+}
+// Burst-only fire — bypasses reload/cocking block so burst completes even mid-state
+function fireBurstShot(){
+  const w=WEAPONS[curWid];
+  if(!getMag()||!P.alive)return;
+  setMag(getMag()-1);updateAmmoHUD();
+  muzzleLight.intensity=6;setTimeout(()=>muzzleLight.intensity=0,55);
+  if(gunG){const[,,oz]=GUN_POS[curWid];gunG.position.z+=w.recoil;setTimeout(()=>{if(gunG)gunG.position.z=oz;},60);}
+  const dir=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(P.pitch,P.yaw,0,'YXZ')).normalize();
+  dir.x+=(Math.random()-.5)*w.spread*2;dir.y+=(Math.random()-.5)*w.spread*2;dir.normalize();
+  const m=new THREE.Mesh(BGEO,PBMAT);m.position.copy(P.pos).addScaledVector(dir,.6);
+  scene.add(m);bullets.push({mesh:m,dir,life:0,dmg:w.damage,spd:w.bspeed});
+  if(getMag()===0)startReload();
+}
+function tryShoot(){
+  const w=WEAPONS[curWid];
+  if(cocking||P.reloading)return;
+  if(w.mode==='BURST'){
+    if(burstCount>0)return;
+    burstCount=3; burstTimer=0; // all 3 shots fired by the loop
+  }
+  else if(w.mode==='BOLT'||w.mode==='PUMP'||w.mode==='SEMI'){fireBullet();}
+}
+// ─── COCKING ANIMATION ────────────────────────────────────
+function updateCockAnim(dt){
+  if(!cockAnim||!cocking||!gunG)return;
+  cockTimer+=dt;
+  const t=Math.min(cockTimer/cockDuration,1);
+  cockAnim.t=t;
+  const[ox,oy,oz]=GUN_POS[curWid];
+  if(cockAnim.type==='pump'){
+    // Pump slides forward then snaps back
+    const slide=t<0.45?t/0.45:1-(t-0.45)/0.55;
+    gunG.position.z=oz+slide*0.07;
+    gunG.rotation.x=slide*0.06;
+  } else if(cockAnim.type==='bolt'){
+    // Bolt lifts up (rx), pulls back (z), pushes forward (z), rotates back down
+    if(t<0.25){const p=t/0.25;gunG.rotation.z=p*0.14;} // bolt rotates up
+    else if(t<0.5){const p=(t-0.25)/0.25;gunG.position.z=oz+p*0.06;gunG.rotation.z=0.14;}// bolt pulls back
+    else if(t<0.75){const p=(t-0.5)/0.25;gunG.position.z=oz+0.06-p*0.06;gunG.rotation.z=0.14;}// bolt pushes forward
+    else{const p=(t-0.75)/0.25;gunG.rotation.z=0.14*(1-p);}// bolt rotates down
+  }
+  if(cockTimer>=cockDuration){cocking=false;cockAnim=null;gunG.rotation.z=0;gunG.position.z=oz;}
+}
+function initSlotAmmo(){
+  const wp=WEAPONS[loadout[0]], ws=WEAPONS[loadout[1]];
+  const mult=perks.doubleAmmo?2:1;
+  slotAmmo=[[wp.mag,Math.min(wp.reserve*2,wp.reserve*mult)],[ws.mag,Math.min(ws.reserve*2,ws.reserve*mult)]];
+}
+function startReload(){
+  if(P.reloading||getRes()<=0)return;
+  const w=WEAPONS[curWid];
+  let dur=w.reload;
+  if(perks.quickReload)dur*=0.6;
+  P.reloading=true;P.reloadTimer=0;P.reloadDuration=dur;
+  const animType=w.mode==='PUMP'?'pump':'mag';
+  let mm=null;
+  if(animType==='mag'){
+    mm=createMagMesh(curWid);
+    const[ox,oy,oz]=GUN_POS[curWid];
+    mm.position.set(ox,oy-0.25,oz+0.04);
+    camera.add(mm);
+  }
+  reloadAnim={t:0,dur:w.reload,type:animType,magMesh:mm,done:false};
+}
+function finishReload(){
+  const w=WEAPONS[curWid];
+  const needed=w.mag-getMag(),take=Math.min(needed,getRes());
+  setMag(getMag()+take);setRes(getRes()-take);
+  P.reloading=false;
+  if(reloadAnim&&reloadAnim.magMesh){camera.remove(reloadAnim.magMesh);}
+  reloadAnim=null;
+  updateAmmoHUD();
+}
+const _eShootDir=new THREE.Vector3(), _eShootOrig=new THREE.Vector3();
+function enemyShoot(e){
+  _eShootOrig.copy(e.group.position);_eShootOrig.y+=1.2;
+  _eShootDir.set(P.pos.x,1.0,P.pos.z).sub(_eShootOrig).normalize();
+  _eShootDir.x+=(Math.random()-.5)*.12;_eShootDir.z+=(Math.random()-.5)*.12;_eShootDir.normalize();
+  const m=new THREE.Mesh(BGEO,EBMAT);m.position.copy(_eShootOrig);
+  scene.add(m);eBullets.push({mesh:m,dir:_eShootDir.clone(),life:0});
+}
+
+// ─── RELOAD ANIMATION UPDATE ──────────────────────────────
+function updateReloadAnim(dt){
+  if(!reloadAnim||reloadAnim.done||!gunG)return;
+  reloadAnim.t+=dt/reloadAnim.dur;
+  if(reloadAnim.t>=1){reloadAnim.t=1;reloadAnim.done=true;}
+  const t=reloadAnim.t;
+  const[ox,oy,oz]=GUN_POS[curWid];
+
+  if(reloadAnim.type==='mag'){
+    const s=RELOAD_ANIM.mag(t);
+    // Animate entire gun group
+    gunG.position.y=oy+s.gunY;
+    gunG.position.z=oz+s.gunZ;
+    gunG.rotation.x=s.gunRX;
+    // Animate new mag
+    if(reloadAnim.magMesh){
+      reloadAnim.magMesh.visible=s.magVis;
+      reloadAnim.magMesh.position.set(ox+0.01, oy+s.magY, oz+0.04);
+    }
+  } else if(reloadAnim.type==='pump'){
+    const s=RELOAD_ANIM.pump(t);
+    gunG.position.y=oy+s.gunY;
+    gunG.position.z=oz+s.gunZ;
+    gunG.rotation.x=s.gunRX;
+    // Animate forend (child index varies — slide the whole gun forward/back slightly)
+    if(s.pumpZ!==undefined)gunG.position.z=oz+s.gunZ+s.pumpZ;
+  }
+}
+
+// ─── UI ───────────────────────────────────────────────────
+function updateAmmoHUD(){
+  const w=WEAPONS[curWid];
+  const mag=slotAmmo[activeSlot][0], res=slotAmmo[activeSlot][1];
+  document.getElementById('wnamelbl').textContent=w.name+' · '+w.mode+(attachment?' · '+(attachment==='grenade'?'🔴 GL('+grenades+')':attachment==='suppressor'?'🔇':attachment==='laser'?'🔴':' '):'');
+  document.getElementById('amv').innerHTML=`${mag} <span style="font-size:16px;opacity:.4">/ ${res}</span>`;
+  document.getElementById('amv').className='hv'+(mag<=Math.ceil(w.mag*.2)?' red':'');
+}
+function updateHP(){
+  const pct=P.hp/P.maxHp*100;
+  document.getElementById('hpv').textContent=P.hp;
+  document.getElementById('hfill').style.width=pct+'%';
+  document.getElementById('hfill').style.background=pct>50?'linear-gradient(90deg,#3c6,#6fa)':pct>25?'linear-gradient(90deg,#ca2,#fc4)':'linear-gradient(90deg,#d22,#f44)';
+  document.getElementById('hpv').className='hv'+(pct<25?' red':'');
+  const lv=document.getElementById('lowv');lv.style.animation=pct<25?'pulse .8s ease-in-out infinite':'none';lv.style.opacity=pct<25?'1':'0';
+}
+function updateScore(){document.getElementById('sval').textContent=P.score.toLocaleString();}
+function updateWave(){document.getElementById('wv').textContent=wave;}
+function flashHit(){const v=document.getElementById('hitv');v.style.opacity='1';setTimeout(()=>v.style.opacity='0',130);}
+function showAnn(t){const el=document.getElementById('wann');el.textContent=t;el.style.opacity='1';setTimeout(()=>el.style.opacity='0',2400);}
+
+// ─── LASER DOT + BEAM ─────────────────────────────────────
+const _laserRay=new THREE.Raycaster();
+const _laserDir=new THREE.Vector3();
+// Dot
+const laserDotGeo=new THREE.SphereGeometry(0.04,8,8);
+const laserDotMat=new THREE.MeshBasicMaterial({color:0xff0000});
+const laserDot=new THREE.Mesh(laserDotGeo,laserDotMat);
+laserDot.visible=false;
+scene.add(laserDot);
+const laserCoreMat=new THREE.MeshBasicMaterial({color:0xffffff});
+const laserCore=new THREE.Mesh(new THREE.SphereGeometry(0.018,6,6),laserCoreMat);
+laserDot.add(laserCore);
+// Beam — a thin line from muzzle to dot
+const _beamPositions=new Float32Array(6); // two points, xyz each
+const beamGeo=new THREE.BufferGeometry();
+beamGeo.setAttribute('position',new THREE.BufferAttribute(_beamPositions,3));
+const beamLine=new THREE.Line(beamGeo,new THREE.LineBasicMaterial({color:0xff2200,transparent:true,opacity:0.55}));
+beamLine.visible=false;
+scene.add(beamLine);
+
+function updateLaserDot(){
+  if(attachment!=='laser'||!running||!P.alive){laserDot.visible=false;beamLine.visible=false;return;}
+  _laserDir.set(0,0,-1).applyEuler(new THREE.Euler(P.pitch,P.yaw,0,'YXZ')).normalize();
+  _laserRay.set(P.pos,_laserDir);_laserRay.far=80;
+  const targets=[];
+  enemies.forEach(e=>{if(e.alive)e.group.children.forEach(c=>{if(c.isMesh)targets.push(c);});});
+  const hits=_laserRay.intersectObjects(targets,false);
+  let dotPos;
+  if(hits.length>0){
+    dotPos=hits[0].point;
+  } else {
+    const t=_laserDir.y<0?(-P.pos.y)/_laserDir.y:Infinity;
+    const dist=Math.min(isFinite(t)?t:60,60);
+    dotPos=P.pos.clone().addScaledVector(_laserDir,dist);
+    dotPos.y=Math.max(0.05,dotPos.y);
+  }
+  laserDot.position.copy(dotPos);
+  laserDot.visible=true;
+  const pulse=0.85+Math.sin(gT*12)*0.15;
+  laserDot.scale.setScalar(pulse);
+  // Update beam: start slightly in front of camera, end at dot
+  const muzzle=P.pos.clone().addScaledVector(_laserDir,0.4);
+  _beamPositions[0]=muzzle.x;_beamPositions[1]=muzzle.y;_beamPositions[2]=muzzle.z;
+  _beamPositions[3]=dotPos.x;_beamPositions[4]=dotPos.y;_beamPositions[5]=dotPos.z;
+  beamGeo.attributes.position.needsUpdate=true;
+  beamLine.visible=true;
+}
+
+// ─── MAIN LOOP ────────────────────────────────────────────
+const clock=new THREE.Clock();let gT=0;
+function update(dt){
+  if(!P.alive)return;
+  gT+=dt;
+  if(P.reloading){P.reloadTimer+=dt;updateReloadAnim(dt);if(P.reloadTimer>=P.reloadDuration)finishReload();}
+  if(cocking)updateCockAnim(dt);
+  updateADSLerp(dt);
+  updateLaserDot();
+  checkAirstrikeTrigger();
+  updateAirstrikeHUD(dt);
+
+  // Burst — fires all 3 shots spaced 80ms apart
+  if(burstCount>0){burstTimer-=dt;if(burstTimer<=0){fireBurstShot();burstCount--;burstTimer=0.08;}}
+
+  // Auto
+  const w=WEAPONS[curWid];
+  if(w.mode==='AUTO'&&mouseHeld&&!P.reloading){fireTimer-=dt;if(fireTimer<=0){fireBullet();fireTimer=1/w.rate;}}else if(fireTimer>0)fireTimer-=dt;
+
+  // Move
+  const sprint=keys.ShiftLeft||keys.ShiftRight;
+  const mv=new THREE.Vector3();
+  if(keys.KeyW)mv.z-=1;if(keys.KeyS)mv.z+=1;if(keys.KeyA)mv.x-=1;if(keys.KeyD)mv.x+=1;
+  const moving=mv.lengthSq()>0;
+  mv.normalize().applyEuler(new THREE.Euler(0,P.yaw,0)).multiplyScalar((sprint?10.5:6.5)*dt);
+  P.pos.add(mv);P.pos.x=Math.max(-ARENA+1,Math.min(ARENA-1,P.pos.x));P.pos.z=Math.max(-ARENA+1,Math.min(ARENA-1,P.pos.z));
+  camera.position.copy(P.pos);camera.rotation.set(P.pitch,P.yaw,0,'YXZ');
+
+  // Head bob (only when not reloading to not fight animation)
+  const[ox,oy,oz]=GUN_POS[curWid];
+  if(!P.reloading){
+    if(moving){
+      P.stepT+=dt*(sprint?13:8.5);const ba=sprint?.025:.014;
+      camera.position.y=P.pos.y+Math.sin(P.stepT)*ba;
+      if(gunG){gunG.position.y=oy+Math.sin(P.stepT*2)*ba*.6;gunG.position.x=ox+Math.sin(P.stepT)*.007;gunG.rotation.z=Math.sin(P.stepT)*.012;}
+    } else {
+      camera.position.y+=(P.pos.y-camera.position.y)*.12;
+      if(gunG){gunG.position.y+=(oy-gunG.position.y)*.12;gunG.position.x+=(ox-gunG.position.x)*.12;gunG.rotation.z*=.88;}
+    }
+    if(gunG)gunG.rotation.x=Math.sin(gT*.88)*.003;
+  }
+
+// Reusable vectors to avoid per-frame GC allocations
+const _eCenter=new THREE.Vector3();
+const _bPos=new THREE.Vector3();
+
+  // Bullets
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];b.life+=dt;b.mesh.position.addScaledVector(b.dir,(b.spd||52)*dt);
+    if(b.life>2.4){scene.remove(b.mesh);bullets.splice(i,1);continue;}
+    let hit=false;
+    for(let j=enemies.length-1;j>=0;j--){
+      const e=enemies[j];if(!e.alive)continue;
+      _eCenter.copy(e.group.position);_eCenter.y+=1.2;
+      if(b.mesh.position.distanceToSquared(_eCenter)<0.64){
+        e.hp-=b.dmg;spawnFX(b.mesh.position,true,8);
+        const pct=Math.max(0,e.hp/e.maxHp);e.hbFill.scale.x=pct;e.hbFill.position.x=(pct-1)*.44;
+        if(e.hp<=0){
+          spawnFX(e.group.position,true,14);
+          scene.remove(e.group);e.alive=false;enemies.splice(j,1);waveLeft--;P.score+=100*wave;updateScore();
+        }
+        hit=true;break;
+      }
+    }
+    if(!hit){const p=b.mesh.position;if(Math.abs(p.x)>ARENA-1||Math.abs(p.z)>ARENA-1||p.y<.1||p.y>9.8){spawnFX(p,false,4);hit=true;}}
+    if(hit){scene.remove(b.mesh);bullets.splice(i,1);}
+  }
+  for(let i=eBullets.length-1;i>=0;i--){
+    const b=eBullets[i];b.life+=dt;
+    b.mesh.position.addScaledVector(b.dir,22*dt);
+    if(b.life>3.5){scene.remove(b.mesh);eBullets.splice(i,1);continue;}
+    const dx=b.mesh.position.x-P.pos.x;
+    const dy=b.mesh.position.y-1.0;
+    const dz=b.mesh.position.z-P.pos.z;
+    if(dx*dx+dy*dy+dz*dz<1.4*1.4){
+      P.hp-=2+(Math.random()*2|0);P.hp=Math.max(0,P.hp);
+      updateHP();flashHit();
+      scene.remove(b.mesh);eBullets.splice(i,1);
+      if(P.hp<=0){gameOver();return;}
+      continue;
+    }
+  }
+const _tp=new THREE.Vector3();
+  for(let i=0;i<enemies.length;i++){
+    const e=enemies[i];if(!e.alive)continue;
+    _tp.subVectors(P.pos,e.group.position);_tp.y=0;const dist=_tp.length();
+    if(dist>1.4){_tp.normalize().multiplyScalar(e.speed*dt);e.group.position.add(_tp);}
+    // Melee damage when touching player
+    else{
+      e.meleeT=(e.meleeT||0)-dt;
+      if(e.meleeT<=0){
+        P.hp-=2+(Math.random()*2|0);P.hp=Math.max(0,P.hp);
+        updateHP();flashHit();e.meleeT=1.8;
+        if(P.hp<=0){gameOver();return;}
+      }
+    }
+    e.group.position.x=Math.max(-ARENA+1,Math.min(ARENA-1,e.group.position.x));e.group.position.z=Math.max(-ARENA+1,Math.min(ARENA-1,e.group.position.z));
+    e.group.lookAt(P.pos.x,e.group.position.y,P.pos.z);e.bobT+=dt*5;e.group.position.y=Math.abs(Math.sin(e.bobT))*.035;
+    e.hbFill.lookAt(camera.position);const hbBg=e.group.children[e.group.children.length-2];if(hbBg)hbBg.lookAt(camera.position);
+    e.shootT-=dt;if(e.shootT<=0&&dist<36){enemyShoot(e);e.shootT=3.5+Math.random()*3.5;}
+  }
+  // ─── PICKUPS ──────────────────────────────────────────────
+  updatePickups(dt);
+
+  for(let i=0;i<POOL;i++){const p=pPool[i];if(!p.active)continue;p.life+=dt;p.vel.y-=16*dt;p.mesh.position.addScaledVector(p.vel,dt);if(p.life>p.maxLife){p.mesh.visible=false;p.active=false;}}
+  if(waveActive&&waveLeft<=0&&enemies.length===0&&waveSpawned>0){waveActive=false;waveCool=3.5;}
+  if(!waveActive&&waveCool>0){
+    waveCool-=dt;
+    if(waveCool<=0){
+      if(wave>=4&&wave%4===0&&!upgradeShown){
+        const isAttachWave=wave>=20&&wave%4===0&&!attachShown;
+        const isPerkWave=wave>=24&&wave%4===0&&!perkShown&&!isAttachWave;
+        if(isAttachWave){
+          showAttachScreen(()=>{upgradeShown=false;wave++;updateWave();spawnWave();});
+        } else if(isPerkWave){
+          showPerkScreen(()=>{upgradeShown=false;wave++;updateWave();spawnWave();});
+        } else {
+          showUpgradeScreen();
+        }
+      } else {
+        wave++;updateWave();spawnWave();
+      }
+    }
+  }
+}
+
+// ─── AIRSTRIKE SYSTEM ─────────────────────────────────────
+let airstrikeNextScore=150000;
+let airstrikeActive=false;
+let airstrikeArmed=false; // true when ready, waiting for SPACE
+
+const AIRSTRIKES=['helicopter','toxicgas','nuke','minibombs'];
+
+// HUD element for "armed" state
+const _airHUD=(()=>{
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) translateY(-80px);font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:3px;color:#ff4444;text-align:center;z-index:15;pointer-events:none;display:none;text-shadow:0 0 12px rgba(255,50,50,.6);';
+  el.innerHTML='AIR SUPPORT ARMED &amp; READY<br><span style="font-size:9px;letter-spacing:2px;color:rgba(255,150,150,.6);">[ SPACE ] TO CALL</span>';
+  document.body.appendChild(el);
+  return el;
+})();
+
+// Blinking animation for armed state
+let _airBlinkT=0;
+function updateAirstrikeHUD(dt){
+  if(!airstrikeArmed||airstrikeActive){_airHUD.style.display='none';return;}
+  _airHUD.style.display='block';
+  _airBlinkT+=dt;
+  _airHUD.style.opacity=(Math.sin(_airBlinkT*4)*.4+.6).toString();
+}
+
+function checkAirstrikeTrigger(){
+  if(airstrikeActive||airstrikeArmed)return;
+  if(P.score>=airstrikeNextScore){
+    airstrikeNextScore+=150000;
+    airstrikeArmed=true;
+    showPickupMsg('⚡ AIR SUPPORT ARMED','#ff4444');
+  }
+}
+
+function triggerAirstrike(){
+  if(!airstrikeArmed||airstrikeActive)return;
+  airstrikeArmed=false;
+  airstrikeActive=true;
+  _airHUD.style.display='none';
+  const type=AIRSTRIKES[Math.floor(Math.random()*AIRSTRIKES.length)];
+  const names={helicopter:'HELICOPTER STRIKE',toxicgas:'TOXIC GAS',nuke:'TACTICAL NUKE',minibombs:'CLUSTER BOMBS'};
+  showAnn('STAND BY FOR AIR SUPPORT');
+  showPickupMsg('⚠ '+names[type]+' INBOUND','#ff2200');
+
+  if(type==='helicopter') runHelicopterStrike();
+  else if(type==='toxicgas') runToxicGas();
+  else if(type==='nuke') runNuke();
+  else runMiniBombs();
+}
+
+function killEnemy(e){
+  if(!e.alive)return;
+  spawnFX(e.group.position.clone().setY(1),true,12);
+  scene.remove(e.group);e.alive=false;enemies.splice(enemies.indexOf(e),1);
+  waveLeft--;P.score+=50*wave;updateScore();
+}
+
+// ── Helicopter: sweeping minigun fire across the arena ──
+function runHelicopterStrike(){
+  // Show helicopter icon sweeping across HUD
+  const bar=document.createElement('div');
+  bar.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,50,50,.7);z-index:50;transition:none;';
+  document.body.appendChild(bar);
+
+  // Animate a sweep of bullets across the arena over 3 seconds
+  let t=0;const dur=3.5;
+  const sweepInterval=setInterval(()=>{
+    t+=0.06;
+    if(t>=dur){clearInterval(sweepInterval);bar.remove();airstrikeActive=false;return;}
+    // Fire a burst of bullets along a random sweep line
+    const sweepX=(Math.random()*2-1)*35;
+    const sweepZ=(Math.random()*2-1)*35;
+    // Damage any enemy near the sweep point
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];if(!e.alive)continue;
+      const dx=e.group.position.x-sweepX, dz=e.group.position.z-sweepZ;
+      if(dx*dx+dz*dz<9){// 3m radius per burst
+        e.hp-=60*(perks.damageBoost?1.5:1);
+        const pct=Math.max(0,e.hp/e.maxHp);e.hbFill.scale.x=pct;e.hbFill.position.x=(pct-1)*.44;
+        if(e.hp<=0)killEnemy(e);
+        else spawnFX(e.group.position.clone().setY(1),true,6);
+      }
+    }
+    // Spark FX at the sweep point
+    const sp=new THREE.Vector3(sweepX,0.1,sweepZ);spawnFX(sp,false,8);
+    muzzleLight.intensity=4;setTimeout(()=>muzzleLight.intensity=0,40);
+  },60);
+}
+
+// ── Toxic Gas: expanding green cloud that poisons all enemies ──
+function runToxicGas(){
+  // Green screen tint
+  const tint=document.createElement('div');
+  tint.style.cssText='position:fixed;inset:0;background:rgba(0,180,0,.12);z-index:3;pointer-events:none;transition:opacity 1s;';
+  document.body.appendChild(tint);
+
+  let tick=0;const totalTicks=40;
+  const gasInterval=setInterval(()=>{
+    tick++;
+    // Each tick, damage all enemies
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];if(!e.alive)continue;
+      e.hp-=8*(perks.damageBoost?1.5:1);
+      const pct=Math.max(0,e.hp/e.maxHp);e.hbFill.scale.x=pct;e.hbFill.position.x=(pct-1)*.44;
+      if(e.hp<=0)killEnemy(e);
+      else if(Math.random()<0.3)spawnFX(e.group.position.clone().setY(1),false,3);
+    }
+    if(tick>=totalTicks){
+      clearInterval(gasInterval);
+      tint.style.opacity='0';
+      setTimeout(()=>tint.remove(),1000);
+      airstrikeActive=false;
+    }
+  },80);
+
+  // Slowly deal damage to player too (small)
+  let pdmg=0;
+  const pdmgInterval=setInterval(()=>{
+    if(!airstrikeActive){clearInterval(pdmgInterval);return;}
+    pdmg++;
+    if(pdmg<=20){P.hp-=1;P.hp=Math.max(1,P.hp);updateHP();flashHit();}
+  },160);
+}
+
+// ── Nuke: bright flash, kills everything, small player damage ──
+function runNuke(){
+  // White flash
+  const flash=document.createElement('div');
+  flash.style.cssText='position:fixed;inset:0;background:#fff;z-index:50;pointer-events:none;opacity:1;transition:opacity 1.8s;';
+  document.body.appendChild(flash);
+
+  // Screen shake simulation via camera offset
+  let shakeT=0;
+  const shakeInterval=setInterval(()=>{
+    shakeT+=0.05;
+    camera.position.x=P.pos.x+(Math.random()-.5)*0.18*Math.max(0,1-shakeT);
+    camera.position.z=P.pos.z+(Math.random()-.5)*0.18*Math.max(0,1-shakeT);
+    if(shakeT>1)clearInterval(shakeInterval);
+  },16);
+
+  setTimeout(()=>{
+    // Kill all enemies
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];if(e.alive){spawnFX(e.group.position.clone().setY(1),true,20);scene.remove(e.group);e.alive=false;}
+    }
+    enemies.length=0;waveLeft=0;updateScore();
+
+    // Player takes 25 damage
+    P.hp=Math.max(1,P.hp-25);updateHP();flashHit();
+
+    // Big explosion at center
+    const center=new THREE.Vector3(0,0.5,0);
+    for(let i=0;i<8;i++){
+      const off=new THREE.Vector3((Math.random()-.5)*30,(Math.random()-.5)*2,(Math.random()-.5)*30);
+      spawnFX(center.clone().add(off),false,15);
+    }
+    muzzleLight.intensity=20;setTimeout(()=>muzzleLight.intensity=0,400);
+
+    flash.style.opacity='0';
+    setTimeout(()=>{flash.remove();airstrikeActive=false;},1800);
+  },600);
+}
+
+// ── Mini Bombs: cluster bombs falling across the arena ──
+function runMiniBombs(){
+  const BOMB_COUNT=18;
+  let dropped=0,exploded=0;
+
+  const dropInterval=setInterval(()=>{
+    if(dropped>=BOMB_COUNT){clearInterval(dropInterval);return;}
+    dropped++;
+    const bx=(Math.random()*2-1)*(ARENA-4);
+    const bz=(Math.random()*2-1)*(ARENA-4);
+    // Show a falling indicator
+    const geo=new THREE.SphereGeometry(.1,6,6);
+    const mat=new THREE.MeshBasicMaterial({color:0xffaa00});
+    const bomb=new THREE.Mesh(geo,mat);
+    bomb.position.set(bx,12,bz);
+    scene.add(bomb);
+
+    // Fall animation
+    let by=12;
+    const fallInterval=setInterval(()=>{
+      by-=0.9;bomb.position.y=by;
+      if(by<=0.2){
+        clearInterval(fallInterval);
+        scene.remove(bomb);
+        // Explode
+        const ep=new THREE.Vector3(bx,0.2,bz);
+        spawnFX(ep,false,16);
+        muzzleLight.intensity=8;setTimeout(()=>muzzleLight.intensity=0,80);
+        // Damage enemies in radius 4
+        for(let i=enemies.length-1;i>=0;i--){
+          const e=enemies[i];if(!e.alive)continue;
+          const dx=e.group.position.x-bx,dz=e.group.position.z-bz;
+          if(dx*dx+dz*dz<16){
+            const dmg=Math.round((120-Math.sqrt(dx*dx+dz*dz)*20)*(perks.damageBoost?1.5:1));
+            e.hp-=dmg;
+            const pct=Math.max(0,e.hp/e.maxHp);e.hbFill.scale.x=pct;e.hbFill.position.x=(pct-1)*.44;
+            if(e.hp<=0)killEnemy(e);
+          }
+        }
+        // Damage player if nearby
+        const pdx=P.pos.x-bx,pdz=P.pos.z-bz;
+        if(pdx*pdx+pdz*pdz<9){P.hp=Math.max(1,P.hp-12);updateHP();flashHit();}
+        exploded++;
+        if(exploded>=BOMB_COUNT)airstrikeActive=false;
+      }
+    },20);
+  },180);
+}
+
+// ─── PICKUP SYSTEM ────────────────────────────────────────
+const pickups=[];
+let pickupSpawnT=0;
+const PICKUP_INTERVAL=16; // seconds between spawn attempts
+
+// Build a health pack mesh: red cross on white box
+function mkHealthMesh(){
+  const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(.38,.14,.38),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.6,metalness:0.1}));
+  base.castShadow=true;g.add(base);
+  const hBar=new THREE.Mesh(new THREE.BoxGeometry(.28,.16,.08),new THREE.MeshStandardMaterial({color:0xff2222,roughness:0.5,metalness:0.0,emissive:0xff0000,emissiveIntensity:0.4}));
+  g.add(hBar);
+  const vBar=new THREE.Mesh(new THREE.BoxGeometry(.08,.16,.28),new THREE.MeshStandardMaterial({color:0xff2222,roughness:0.5,metalness:0.0,emissive:0xff0000,emissiveIntensity:0.4}));
+  g.add(vBar);
+  // Glow ring on floor
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.28,.025,8,24),new THREE.MeshBasicMaterial({color:0xff3333,transparent:true,opacity:0.55}));
+  ring.rotation.x=Math.PI/2;ring.position.y=-.08;g.add(ring);
+  return g;
+}
+
+// Build an ammo pack mesh: yellow box with bullets stacked
+function mkAmmoPack(){
+  const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(.42,.16,.3),new THREE.MeshStandardMaterial({color:0x2a2200,roughness:0.7,metalness:0.3}));
+  base.castShadow=true;g.add(base);
+  // Yellow band
+  const band=new THREE.Mesh(new THREE.BoxGeometry(.44,.06,.32),new THREE.MeshStandardMaterial({color:0xffcc00,roughness:0.4,metalness:0.5,emissive:0xffaa00,emissiveIntensity:0.35}));
+  band.position.y=.02;g.add(band);
+  // Three bullet tips
+  [-0.1,0,.1].forEach(ox=>{
+    const tip=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.08,6),new THREE.MeshStandardMaterial({color:0xddaa22,roughness:0.3,metalness:0.8}));
+    tip.position.set(ox,.12,0);g.add(tip);
+    const cas=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.06,6),new THREE.MeshStandardMaterial({color:0xcc8800,roughness:0.4,metalness:0.7}));
+    cas.position.set(ox,.07,0);g.add(cas);
+  });
+  // Glow ring
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.025,8,24),new THREE.MeshBasicMaterial({color:0xffcc00,transparent:true,opacity:0.5}));
+  ring.rotation.x=Math.PI/2;ring.position.y=-.09;g.add(ring);
+  return g;
+}
+
+function spawnPickup(type){
+  // Random position avoiding the center and walls
+  const angle=Math.random()*Math.PI*2;
+  const dist=8+Math.random()*22;
+  const x=Math.cos(angle)*dist, z=Math.sin(angle)*dist;
+  const mesh=type==='health'?mkHealthMesh():mkAmmoPack();
+  mesh.position.set(x,0.18,z);
+  scene.add(mesh);
+  pickups.push({mesh,type,bobT:Math.random()*Math.PI*2,life:30+Math.random()*20}); // despawn after 30-50s
+}
+
+function updatePickups(dt){
+  if(!running)return;
+  // Spawn timer
+  pickupSpawnT-=dt;
+  if(pickupSpawnT<=0){
+    pickupSpawnT=PICKUP_INTERVAL+(Math.random()*6-3);
+    // Spawn 1-2 pickups: bias toward ammo, occasional health
+    const type=P.hp<50?'health':Math.random()<0.28?'health':'ammo';
+    spawnPickup(type);
+  }
+
+  // Update + collect
+  for(let i=pickups.length-1;i>=0;i--){
+    const pk=pickups[i];
+    pk.life-=dt;
+    // Bob and rotate
+    pk.bobT+=dt*2.2;
+    pk.mesh.position.y=0.18+Math.sin(pk.bobT)*0.06;
+    pk.mesh.rotation.y+=dt*1.1;
+
+    // Despawn
+    if(pk.life<=0){scene.remove(pk.mesh);pickups.splice(i,1);continue;}
+
+    // Fade out last 4 seconds
+    if(pk.life<4){
+      const fade=pk.life/4;
+      pk.mesh.children.forEach(c=>{if(c.material)c.material.opacity=fade;});
+    }
+
+    // Collect check
+    const dx=pk.mesh.position.x-P.pos.x, dz=pk.mesh.position.z-P.pos.z;
+    if(dx*dx+dz*dz<0.9){
+      if(pk.type==='health'){
+        const gained=Math.min(35,P.maxHp-P.hp);
+        P.hp=Math.min(P.maxHp,P.hp+35);
+        updateHP();
+        showPickupMsg('+35 HP','#44ff88');
+      } else {
+        // Refill reserve for both slots by a chunk
+        const wp=WEAPONS[loadout[0]], ws=WEAPONS[loadout[1]];
+        slotAmmo[0][1]=Math.min(wp.reserve, slotAmmo[0][1]+Math.floor(wp.reserve*0.4));
+        slotAmmo[1][1]=Math.min(ws.reserve, slotAmmo[1][1]+Math.floor(ws.reserve*0.5));
+        updateAmmoHUD();
+        showPickupMsg('+AMMO','#ffcc00');
+      }
+      scene.remove(pk.mesh);pickups.splice(i,1);
+    }
+  }
+}
+
+// Pickup message flash (reuses wann element briefly)
+function showPickupMsg(txt,col){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:140px;left:50%;transform:translateX(-50%);font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;letter-spacing:6px;color:${col};text-shadow:0 0 20px ${col};opacity:1;z-index:15;pointer-events:none;transition:opacity 0.8s;`;
+  el.textContent=txt;
+  document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),800);},700);
+}
+
+// Clear pickups on game reset
+function clearPickups(){pickups.forEach(pk=>scene.remove(pk.mesh));pickups.length=0;pickupSpawnT=8;}
+
+// ─── ATTACHMENTS & PERKS ──────────────────────────────────
+let attachment=null; // 'laser' | 'suppressor' | 'grenade'
+let grenades=0;
+let perks={doubleAmmo:false,quickReload:false,damageBoost:false};
+let attachShown=false, perkShown=false;
+
+const ATTACHMENTS=[
+  {id:'laser',     ico:'🔴', name:'Red Laser',       desc:'Reduced spread · faster target acquisition'},
+  {id:'suppressor',ico:'🔇', name:'Suppressor',       desc:'Silenced fire · no muzzle flash · less recoil'},
+  {id:'grenade',   ico:'💣', name:'Grenade Launcher', desc:'Press 6 to launch · 2 grenades'},
+];
+const PERKS=[
+  {id:'doubleAmmo', ico:'🎯', name:'Double Ammo',    desc:'All reserve ammo × 2'},
+  {id:'quickReload',ico:'⚡', name:'Quick Reload',   desc:'All reload times × 0.6'},
+  {id:'damageBoost',ico:'💥', name:'1.5× Damage',    desc:'All weapon damage × 1.5'},
+];
+
+// Apply perks to weapon stats on equip
+function applyPerks(w){
+  let dmg=w.damage, rl=w.reload;
+  if(perks.damageBoost)dmg=Math.round(dmg*1.5);
+  if(perks.quickReload)rl=+(rl*0.6).toFixed(2);
+  return{...w,damage:dmg,reload:rl};
+}
+
+// Grenade mesh pool
+const grenadePool=[];
+let grenadeKey=false;
+document.addEventListener('keydown',e=>{
+  if(e.code==='Digit6'&&running&&P.alive&&grenades>0&&attachment==='grenade'){
+    grenades--;
+    launchGrenade();
+    showPickupMsg(`GRENADE · ${grenades} LEFT`,'#ff8800');
+  }
+});
+
+function launchGrenade(){
+  const geo=new THREE.SphereGeometry(.08,6,6);
+  const mat=new THREE.MeshStandardMaterial({color:0x445533,roughness:0.7,metalness:0.4});
+  const mesh=new THREE.Mesh(geo,mat);
+  const dir=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(P.pitch-.18,P.yaw,0,'YXZ')).normalize();
+  mesh.position.copy(P.pos).addScaledVector(dir,.8);
+  scene.add(mesh);
+  const vel=dir.clone().multiplyScalar(22);
+  vel.y+=4;
+  let life=0;
+  const interval=setInterval(()=>{
+    life+=0.016;
+    mesh.position.addScaledVector(vel,0.016);
+    vel.y-=18*0.016;
+    // Explode on ground or after 3s
+    if(mesh.position.y<0.1||life>3){
+      clearInterval(interval);
+      // Explosion FX
+      spawnFX(mesh.position.clone(),false,20);
+      muzzleLight.intensity=12;setTimeout(()=>muzzleLight.intensity=0,120);
+      // Damage all enemies in radius
+      const ep=mesh.position.clone();
+      for(let i=enemies.length-1;i>=0;i--){
+        const e=enemies[i];if(!e.alive)continue;
+        const d=ep.distanceTo(e.group.position.clone().setY(ep.y));
+        if(d<5){
+          const dmg=Math.round((200-d*30)*( perks.damageBoost?1.5:1));
+          e.hp-=dmg;
+          const pct=Math.max(0,e.hp/e.maxHp);e.hbFill.scale.x=pct;e.hbFill.position.x=(pct-1)*.44;
+          if(e.hp<=0){spawnFX(e.group.position.clone(),true,14);scene.remove(e.group);e.alive=false;enemies.splice(i,1);waveLeft--;P.score+=100*wave;updateScore();}
+        }
+      }
+      scene.remove(mesh);
+    }
+  },16);
+}
+
+// ─── SHARED WEAPON SELECTOR BUILDER ──────────────────────
+function buildUpgradeCard(w, container, isSelected, onSelect){
+  const d=document.createElement('div');
+  d.className='wpcard'+(isSelected?' selected':'');
+  d.dataset.wid=w.id;d.dataset.cat=w.cat;
+  const nb=w.tier===5?'<div style="position:absolute;top:4px;left:6px;font-size:6px;letter-spacing:2px;color:rgba(255,80,80,.95);text-transform:uppercase">T5</div>'
+    :w.tier===4?'<div style="position:absolute;top:4px;left:6px;font-size:6px;letter-spacing:2px;color:rgba(255,120,255,.9);text-transform:uppercase">T4</div>'
+    :w.tier===3?'<div style="position:absolute;top:4px;left:6px;font-size:6px;letter-spacing:2px;color:rgba(120,200,255,.9);text-transform:uppercase">T3</div>'
+    :(w.tier===2||w.tier==='p2')?'<div style="position:absolute;top:4px;left:6px;font-size:6px;letter-spacing:2px;color:rgba(255,200,80,.8);text-transform:uppercase">NEW</div>':'';
+  d.innerHTML=`${nb}<div class="wcheck">\u2713</div><div class="wico"><canvas width="96" height="32" id="uico${w.id}"></canvas></div><div class="wcname">${w.name}</div><div class="wcmode">${w.mode}</div><div class="wstat"><span>DMG</span>${sbar(w.dmgN)}</div><div class="wstat"><span>RPM</span>${sbar(w.rateN)}</div><div class="wstat"><span>MAG</span>${sbar(w.magN)}</div><div class="wstat"><span>RNG</span>${sbar(w.rangeN)}</div><div class="wcdesc">${w.desc}</div>`;
+  d.addEventListener('click',()=>onSelect(w.id,d));
+  container.appendChild(d);
+  requestAnimationFrame(()=>{const ico=document.getElementById('uico'+w.id);if(ico)drawWpnIcon(ico.getContext('2d'),w.id);});
+  return d;
+}
+
+function buildWeaponSelector(container, onP, onS, initP, initS){
+  const pCards={},sCards={};
+  let tP=initP,tS=initS;
+  function selP(id,el){tP=id;Object.values(pCards).forEach(c=>c.classList.remove('selected'));el.classList.add('selected');if(onP)onP(id);}
+  function selS(id,el){tS=id;Object.values(sCards).forEach(c=>c.classList.remove('selected'));el.classList.add('selected');if(onS)onS(id);}
+  function addRow(html,fn,sf,cm,init){
+    const l=document.createElement('div');l.className='urowlbl';l.innerHTML=html;container.appendChild(l);
+    const r=document.createElement('div');r.className='urow';container.appendChild(r);
+    WEAPONS.filter(fn).forEach(w=>{const c=buildUpgradeCard(w,r,w.id===init,sf);cm[w.id]=c;});
+  }
+  addRow('Primary — Tier 1',w=>w.cat==='primary'&&w.tier===1,selP,pCards,tP);
+  addRow('Primary — <span style="color:rgba(255,200,80,.8)">Tier 2</span>',w=>w.cat==='primary'&&w.tier===2,selP,pCards,tP);
+  if(wave>=8)addRow('Primary — <span style="color:rgba(120,200,255,.9)">Tier 3</span>',w=>w.cat==='primary'&&w.tier===3,selP,pCards,tP);
+  if(wave>=12)addRow('Primary — <span style="color:rgba(255,120,255,.9)">Tier 4</span>',w=>w.cat==='primary'&&w.tier===4,selP,pCards,tP);
+  if(wave>=16)addRow('Primary — <span style="color:rgba(255,80,80,.95)">Tier 5</span>',w=>w.cat==='primary'&&w.tier===5,selP,pCards,tP);
+  addRow('Sidearm',w=>w.cat==='pistol'&&(w.tier===1||(w.tier==='p2'&&wave>=4)),selS,sCards,tS);
+  return{getP:()=>tP,getS:()=>tS};
+}
+
+function resumeGame(onDone){
+  document.body.style.cursor='none';running=true;clock.getDelta();equip(curWid);updateAmmoHUD();canvas.requestPointerLock();onDone();
+}
+
+function makeBtn(txt,primary){
+  const b=document.createElement('button');b.textContent=txt;
+  b.style.cssText=primary
+    ?'font-family:\'Rajdhani\',sans-serif;font-size:13px;letter-spacing:5px;font-weight:700;color:#0a0a0a;background:linear-gradient(135deg,#c8a86c,#f5deb3);border:none;padding:10px 36px;cursor:pointer;text-transform:uppercase;'
+    :'font-family:\'Rajdhani\',sans-serif;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.3);background:transparent;border:1px solid rgba(255,255,255,.15);padding:10px 18px;cursor:pointer;text-transform:uppercase;';
+  return b;
+}
+
+function makeSlotRow(pName,sName,pId,sId){
+  const row=document.createElement('div');row.style.cssText='display:flex;gap:32px;margin-bottom:12px;flex-wrap:wrap;justify-content:center;';
+  ['primary','sidearm'].forEach((cat,i)=>{
+    const slot=document.createElement('div');slot.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px;';
+    const lbl=document.createElement('div');lbl.className='uslotlbl';lbl.textContent=i===0?'\u25a3 Primary':'\u25c8 Sidearm';
+    const val=document.createElement('div');val.id=i===0?pId:sId;val.style.cssText='font-family:\'Rajdhani\',sans-serif;font-size:13px;color:rgba(255,220,160,.6);letter-spacing:2px;padding:4px 12px;border:1px solid rgba(255,200,80,.2);';
+    val.textContent=i===0?pName:sName;
+    slot.appendChild(lbl);slot.appendChild(val);row.appendChild(slot);
+  });
+  return row;
+}
+
+function showUpgradeScreen(){
+  upgradeShown=true;running=false;document.exitPointerLock();document.body.style.cursor='default';
+  const ucards=document.getElementById('ucards');ucards.innerHTML='';
+  document.getElementById('ucurP').textContent=WEAPONS[loadout[0]].name;
+  document.getElementById('ucurS').textContent=WEAPONS[loadout[1]].name;
+  document.getElementById('unextwave').textContent=wave+1;
+  const sel=buildWeaponSelector(ucards,id=>{const e=document.getElementById('ucurP');if(e)e.textContent=WEAPONS[id].name;},id=>{const e=document.getElementById('ucurS');if(e)e.textContent=WEAPONS[id].name;},loadout[0],loadout[1]);
+  document.getElementById('upgrade').style.display='flex';
+  document.getElementById('upgradebtn').onclick=()=>{
+    loadout=[sel.getP(),sel.getS()];initSlotAmmo();activeSlot=0;curWid=loadout[0];
+    document.getElementById('upgrade').style.display='none';upgradeShown=false;
+    resumeGame(()=>{wave++;updateWave();spawnWave();});
+  };
+}
+
+function showAttachScreen(onDone){
+  attachShown=true;running=false;document.exitPointerLock();document.body.style.cursor='default';
+  const screen=document.getElementById('attachscreen');screen.innerHTML='';screen.style.display='flex';
+
+  // Header
+  const hdr=document.createElement('div');hdr.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:10px;flex-shrink:0;';
+  hdr.innerHTML='<div class="utitle">ATTACHMENT</div><div class="usub" style="font-size:9px;letter-spacing:5px;color:rgba(255,200,80,.45);text-transform:uppercase;">Choose weapons + attachment for wave '+(wave+1)+'</div>';
+  screen.appendChild(hdr);
+
+  // Two-column body
+  const inner=document.createElement('div');inner.className='apscreen-inner';screen.appendChild(inner);
+
+  // LEFT: weapon selector
+  const left=document.createElement('div');left.className='apscreen-left';inner.appendChild(left);
+
+  const slotRow=document.createElement('div');slotRow.style.cssText='display:flex;gap:24px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;';
+  slotRow.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div class="uslotlbl">▣ Primary</div><div id="apcurP" style="font-family:\'Rajdhani\',sans-serif;font-size:12px;color:rgba(255,220,160,.6);letter-spacing:2px;padding:3px 10px;border:1px solid rgba(255,200,80,.2);">'+WEAPONS[loadout[0]].name+'</div></div>'
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div class="uslotlbl">◈ Sidearm</div><div id="apcurS" style="font-family:\'Rajdhani\',sans-serif;font-size:12px;color:rgba(255,220,160,.6);letter-spacing:2px;padding:3px 10px;border:1px solid rgba(255,200,80,.2);">'+WEAPONS[loadout[1]].name+'</div></div>';
+  left.appendChild(slotRow);
+
+  const sel=buildWeaponSelector(left,
+    id=>{const e=document.getElementById('apcurP');if(e)e.textContent=WEAPONS[id].name;},
+    id=>{const e=document.getElementById('apcurS');if(e)e.textContent=WEAPONS[id].name;},
+    loadout[0],loadout[1]);
+
+  // RIGHT: attachment choices + buttons
+  const right=document.createElement('div');right.className='apscreen-right';inner.appendChild(right);
+
+  const al=document.createElement('div');al.className='urowlbl';al.style.cssText='font-size:8px;letter-spacing:4px;color:rgba(255,200,80,.35);text-transform:uppercase;margin-bottom:4px;';al.textContent='Choose Attachment';right.appendChild(al);
+
+  const ar=document.createElement('div');ar.className='aprow';right.appendChild(ar);
+  let chosenA=attachment;
+  ATTACHMENTS.forEach(a=>{
+    const d=document.createElement('div');d.className='apchoice'+(attachment===a.id?' selected':'');
+    d.innerHTML=`<div class="apico">${a.ico}</div><div class="apname">${a.name}</div><div class="apdesc">${a.desc}</div>`;
+    d.addEventListener('click',()=>{chosenA=a.id;ar.querySelectorAll('.apchoice').forEach(c=>c.classList.remove('selected'));d.classList.add('selected');});
+    ar.appendChild(d);
+  });
+
+  const btnOk=makeBtn('Confirm',true);
+  const btnSk=makeBtn('Skip',false);
+  btnSk.style.marginTop='4px';
+  right.appendChild(btnOk);right.appendChild(btnSk);
+
+  const confirm=(apply)=>{
+    loadout=[sel.getP(),sel.getS()];initSlotAmmo();activeSlot=0;curWid=loadout[0];
+    if(apply&&chosenA){attachment=chosenA;if(chosenA==='grenade')grenades=2;showPickupMsg(ATTACHMENTS.find(a=>a.id===chosenA).name+' EQUIPPED','#ffcc00');}
+    screen.style.display='none';attachShown=false;upgradeShown=false;resumeGame(onDone);
+  };
+  btnOk.onclick=()=>confirm(true);btnSk.onclick=()=>confirm(false);
+}
+
+function showPerkScreen(onDone){
+  perkShown=true;running=false;document.exitPointerLock();document.body.style.cursor='default';
+  const screen=document.getElementById('perkscreen');screen.innerHTML='';screen.style.display='flex';
+  const hdr=document.createElement('div');hdr.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:10px;flex-shrink:0;';
+  hdr.innerHTML='<div class="utitle">PERK</div><div class="usub" style="font-size:9px;letter-spacing:5px;color:rgba(255,200,80,.45);text-transform:uppercase;">Choose weapons + a permanent perk for wave '+(wave+1)+'</div>';
+  screen.appendChild(hdr);
+  const inner=document.createElement('div');inner.className='apscreen-inner';screen.appendChild(inner);
+  const left=document.createElement('div');left.className='apscreen-left';inner.appendChild(left);
+  const slotRow=document.createElement('div');slotRow.style.cssText='display:flex;gap:24px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;';
+  slotRow.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div class="uslotlbl">Primary</div><div id="pkcurP" style="font-family:\'Rajdhani\',sans-serif;font-size:12px;color:rgba(255,220,160,.6);letter-spacing:2px;padding:3px 10px;border:1px solid rgba(255,200,80,.2);">'+WEAPONS[loadout[0]].name+'</div></div>'
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div class="uslotlbl">Sidearm</div><div id="pkcurS" style="font-family:\'Rajdhani\',sans-serif;font-size:12px;color:rgba(255,220,160,.6);letter-spacing:2px;padding:3px 10px;border:1px solid rgba(255,200,80,.2);">'+WEAPONS[loadout[1]].name+'</div></div>';
+  left.appendChild(slotRow);
+  const sel=buildWeaponSelector(left,id=>{const e=document.getElementById('pkcurP');if(e)e.textContent=WEAPONS[id].name;},id=>{const e=document.getElementById('pkcurS');if(e)e.textContent=WEAPONS[id].name;},loadout[0],loadout[1]);
+  const right=document.createElement('div');right.className='apscreen-right';inner.appendChild(right);
+  const pl=document.createElement('div');pl.className='urowlbl';pl.style.cssText='font-size:8px;letter-spacing:4px;color:rgba(255,200,80,.35);text-transform:uppercase;margin-bottom:4px;';pl.textContent='Choose Perk';right.appendChild(pl);
+  const pr=document.createElement('div');pr.className='aprow';right.appendChild(pr);
+  let chosenP=null;
+  PERKS.forEach(p=>{
+    const owned=perks[p.id];
+    const d=document.createElement('div');d.className='apchoice';if(owned)d.style.opacity='0.45';
+    d.innerHTML=`<div class="apico">${p.ico}</div><div class="apname">${p.name}${owned?' \u2713':''}</div><div class="apdesc">${p.desc}</div>`;
+    d.addEventListener('click',()=>{if(owned)return;chosenP=p.id;pr.querySelectorAll('.apchoice').forEach(c=>c.classList.remove('selected'));d.classList.add('selected');});
+    pr.appendChild(d);
+  });
+  const btnOk=makeBtn('Confirm',true);const btnSk=makeBtn('Skip',false);btnSk.style.marginTop='4px';
+  right.appendChild(btnOk);right.appendChild(btnSk);
+  const confirm=(apply)=>{
+    loadout=[sel.getP(),sel.getS()];initSlotAmmo();activeSlot=0;curWid=loadout[0];
+    if(apply&&chosenP){perks[chosenP]=true;if(chosenP==='doubleAmmo'){slotAmmo[0][1]=Math.min(WEAPONS[loadout[0]].reserve*2,slotAmmo[0][1]*2);slotAmmo[1][1]=Math.min(WEAPONS[loadout[1]].reserve*2,slotAmmo[1][1]*2);updateAmmoHUD();}showPickupMsg(PERKS.find(p=>p.id===chosenP).name+' ACTIVE','#ff44ff');}
+    screen.style.display='none';perkShown=false;upgradeShown=false;resumeGame(onDone);
+  };
+  btnOk.onclick=()=>confirm(true);btnSk.onclick=()=>confirm(false);
+}
+
+
+function startGame(){
+  loadout=[selPrimary, selPistol];
+  activeSlot=0; curWid=loadout[0];
+  attachment=null; grenades=0;
+  perks={doubleAmmo:false,quickReload:false,damageBoost:false};
+  initSlotAmmo();
+
+  document.body.style.cursor='none';
+  enemies.forEach(e=>scene.remove(e.group));enemies.length=0;
+  bullets.forEach(b=>scene.remove(b.mesh));bullets.length=0;
+  eBullets.forEach(b=>scene.remove(b.mesh));eBullets.length=0;
+  pPool.forEach(p=>{p.mesh.visible=false;p.active=false;});
+  if(reloadAnim&&reloadAnim.magMesh)camera.remove(reloadAnim.magMesh);reloadAnim=null;
+  clearPickups();
+  laserDot.visible=false;beamLine.visible=false;
+  airstrikeNextScore=150000;airstrikeActive=false;airstrikeArmed=false;
+  _airHUD.style.display='none';
+  P.pos.set(0,1.75,0);P.yaw=0;P.pitch=0;P.hp=100;P.reloading=false;P.reloadTimer=0;P.score=0;P.alive=true;P.stepT=0;
+  scoped=false;burstCount=0;burstTimer=0;fireTimer=0;mouseHeld=false;cocking=false;cockTimer=0;cockAnim=null;adsActive=false;_adsTarget=null;
+  wave=1;waveActive=false;waveCool=0;upgradeShown=false;attachShown=false;perkShown=false;camera.fov=72;camera.updateProjectionMatrix();
+  equip(curWid);
+  updateHP();updateAmmoHUD();updateScore();updateWave();
+  document.getElementById('hud').style.display='block';
+  document.getElementById('xhair').style.display='block';
+  document.getElementById('menu').style.display='none';
+  running=true;clock.getDelta();
+  canvas.requestPointerLock();
+  spawnWave();
+}
+function gameOver(){
+  P.alive=false;running=false;document.exitPointerLock();mouseHeld=false;
+  document.body.style.cursor='default';
+  const finalScore=P.score, finalWave=wave;
+  handleGameOver(finalScore, finalWave);
+}
+
+// ─── BOOT ─────────────────────────────────────────────────
+const ls=document.createElement('style');ls.textContent='@keyframes pulse{0%,100%{opacity:0}50%{opacity:1}}';document.head.appendChild(ls);
+
+// ─── HIGH SCORES ──────────────────────────────────────────
+const HS_KEY='voidhunter_scores';
+const MAX_SCORES=10;
+
+function loadScores(){
+  try{return JSON.parse(localStorage.getItem(HS_KEY))||[];}catch(e){return[];}
+}
+function commitScore(score,wave,name){
+  const scores=loadScores();
+  scores.push({score,wave,name:name||'UNKNOWN',date:new Date().toLocaleDateString()});
+  scores.sort((a,b)=>b.score-a.score);
+  scores.splice(MAX_SCORES);
+  try{localStorage.setItem(HS_KEY,JSON.stringify(scores));}catch(e){}
+}
+function qualifiesForLeaderboard(score){
+  if(score<=0)return false;
+  const scores=loadScores();
+  if(scores.length<MAX_SCORES)return true;
+  return score>scores[scores.length-1].score;
+}
+function renderScores(){
+  const scores=loadScores();
+  const list=document.getElementById('hslist');
+  list.innerHTML='';
+  if(!scores.length){
+    const el=document.createElement('div');el.className='hsempty';
+    el.textContent='No scores yet — be the first!';list.appendChild(el);return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  scores.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='hsrow';
+    const nameEl=`<div class="hsname">${s.name||'UNKNOWN'} · Wave ${s.wave}</div>`;
+    row.innerHTML=`<div class="hsrank">${medals[i]||'#'+(i+1)}</div>${nameEl}<div class="hsscore">${s.score.toLocaleString()}</div>`;
+    list.appendChild(row);
+  });
+}
+
+// Show username prompt if score qualifies, then show game over menu
+function handleGameOver(score,waveNum){
+  if(qualifiesForLeaderboard(score)){
+    document.getElementById('unScoreDisplay').textContent=score.toLocaleString();
+    document.getElementById('unInput').value='';
+    const modal=document.getElementById('usernamemodal');
+    modal.style.display='flex';
+    setTimeout(()=>document.getElementById('unInput').focus(),50);
+
+    const finish=(name)=>{
+      commitScore(score,waveNum,name);
+      modal.style.display='none';
+      showGameOverMenu(score,waveNum);
+    };
+
+    document.getElementById('unsavebtn').onclick=()=>{
+      const n=(document.getElementById('unInput').value.trim().toUpperCase()||'PLAYER').slice(0,12);
+      finish(n);
+    };
+    document.getElementById('unskipbtn').onclick=()=>finish('UNKNOWN');
+    // Enter key to save
+    document.getElementById('unInput').onkeydown=(e)=>{
+      if(e.code==='Enter'){
+        const n=(document.getElementById('unInput').value.trim().toUpperCase()||'PLAYER').slice(0,12);
+        finish(n);
+      }
+    };
+  } else {
+    showGameOverMenu(score,waveNum);
+  }
+}
+
+function showGameOverMenu(score,waveNum){
+  document.getElementById('mtitle').textContent='GAME OVER';
+  document.getElementById('msub').textContent='Wave '+waveNum+' · '+score.toLocaleString()+' pts';
+  document.getElementById('msub').style.cssText='';
+  document.getElementById('flbl').style.display='block';
+  document.getElementById('fsv').style.display='block';
+  document.getElementById('fsv').textContent=score.toLocaleString();
+  document.getElementById('playbtn').textContent='Deploy Again';
+  document.getElementById('hud').style.display='none';
+  document.getElementById('xhair').style.display='none';
+  document.getElementById('menu').style.display='flex';
+}
+
+document.getElementById('hsbtn').addEventListener('click',()=>{
+  renderScores();
+  document.getElementById('hsmodal').style.display='flex';
+});
+document.getElementById('hsclosebtn').addEventListener('click',()=>{
+  document.getElementById('hsmodal').style.display='none';
+});
+document.getElementById('hsmodal').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('hsmodal'))document.getElementById('hsmodal').style.display='none';
+});
+
+document.getElementById('playbtn').addEventListener('click',()=>{if(selPrimary<0||selPistol<0)return;startGame();});
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(window.devicePixelRatio,1));renderer.setSize(window.innerWidth,window.innerHeight);});
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05);
+  if(running)update(dt);
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
